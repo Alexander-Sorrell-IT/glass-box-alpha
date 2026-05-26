@@ -1,0 +1,21 @@
+.env
+.env.local
+node_modules/
+.next/
+out/
+dist/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+
+# Foundry
+cache/
+broadcast/run-*/
+broadcast/*/run-*/
+lib/
+
+# Runs
+runs/
+*.log
