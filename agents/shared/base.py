@@ -15,6 +15,7 @@ from typing import AsyncIterator
 import anthropic
 from loguru import logger
 
+from .ks60 import SYSTEM_PROMPTS
 from .types import AgentName, Decision, DecisionType, ReasoningChain, ReasoningStep
 
 
@@ -30,9 +31,9 @@ class GlassBoxAgent(ABC):
         self.agent_id = agent_id
         self._decision_index = 0
 
-    @abstractmethod
     def system_prompt(self) -> str:
-        """Agent-specific system prompt defining personality + analysis frame."""
+        """Agent's KS60 operator system prompt (Chronos/DA/Web/Mood). Override if needed."""
+        return SYSTEM_PROMPTS[self.name]
 
     @abstractmethod
     async def gather_context(self, market_id: str) -> dict:
