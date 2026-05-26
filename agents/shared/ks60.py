@@ -1,10 +1,9 @@
-"""KS60 operator system prompts.
+"""KS60 operator system prompts for the 4 Glass-Box Alpha agents.
 
-Maps the 4 Glass-Box Alpha agents to their assigned KS60 operators.
-Per docs/ks60-integration.md and Sovereign_Master_Ledger.md Section 16.
-
-Each prompt instructs the agent to reason through its specific operator —
-not as decorative framing, but as the actual decision-method.
+LLM backend: DeepSeek (OpenAI-compatible API). When using deepseek-reasoner,
+the reasoning_content channel streams the step-by-step thinking natively —
+each prompt encourages step-numbered reasoning that maps cleanly to those
+chunks.
 """
 from __future__ import annotations
 

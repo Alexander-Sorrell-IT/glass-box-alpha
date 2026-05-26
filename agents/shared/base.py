@@ -1,19 +1,23 @@
 """Base class for the 4 Glass-Box Alpha agents.
 
 Adapted from the ECHO 4-agent orchestrator. ~25-30% of ECHO code carries over
-(this base + streaming + orchestrator). Agent prompts + tools + market data
-adapters are all new.
+(this base + streaming + orchestrator).
+
+LLM backend: DeepSeek via OpenAI-compatible API. Default model is
+`deepseek-reasoner` (R1) which streams reasoning_content separately from
+content — Glass-Box transparency comes for free.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
 from abc import ABC, abstractmethod
 from typing import AsyncIterator
 
-import anthropic
 from loguru import logger
+from openai import AsyncOpenAI
 
 from .ks60 import SYSTEM_PROMPTS
 from .types import AgentName, Decision, DecisionType, ReasoningChain, ReasoningStep
@@ -23,16 +27,17 @@ class GlassBoxAgent(ABC):
     """Base class for Chronos, Devil's Advocate, Web, and Mood."""
 
     name: AgentName
-    agent_id: int  # ERC-8004 token ID — set after Day 2 mint
-    model: str = "claude-sonnet-4-6"
+    agent_id: int  # ERC-8004 token ID — set after Day 4 mint
+    model: str
 
-    def __init__(self, client: anthropic.AsyncAnthropic, agent_id: int) -> None:
+    def __init__(self, client: AsyncOpenAI, agent_id: int, model: str | None = None) -> None:
         self.client = client
         self.agent_id = agent_id
+        self.model = model or os.environ.get("DEEPSEEK_MODEL", "deepseek-reasoner")
         self._decision_index = 0
 
     def system_prompt(self) -> str:
-        """Agent's KS60 operator system prompt (Chronos/DA/Web/Mood). Override if needed."""
+        """Agent's KS60 operator system prompt. Override for custom behavior."""
         return SYSTEM_PROMPTS[self.name]
 
     @abstractmethod
@@ -42,22 +47,32 @@ class GlassBoxAgent(ABC):
     async def reason(self, market_id: str) -> tuple[Decision, ReasoningChain]:
         """One full decision cycle: gather context → reason → emit decision + reasoning chain."""
         context = await self.gather_context(market_id)
-        prompt = self._build_prompt(market_id, context)
+        user_prompt = self._build_prompt(market_id, context)
 
         steps: list[ReasoningStep] = []
-        async for step in self._stream_reasoning(prompt):
-            steps.append(step)
-            logger.info(f"[{self.name}] step {step.step}: {step.thought[:80]}")
+        final_text = ""
+        prompt_tokens = 0
+        completion_tokens = 0
 
-        final_step = steps[-1]
-        decision = self._parse_decision(market_id, final_step.thought)
+        async for event in self._stream_reasoning(user_prompt):
+            match event:
+                case {"kind": "step", "data": ReasoningStep() as step}:
+                    steps.append(step)
+                    logger.info(f"[{self.name}] step {step.step}: {step.thought[:80]}")
+                case {"kind": "final", "data": str() as text}:
+                    final_text = text
+                case {"kind": "usage", "in": int() as in_tok, "out": int() as out_tok}:
+                    prompt_tokens = in_tok
+                    completion_tokens = out_tok
+
+        decision = self._parse_decision(market_id, final_text or (steps[-1].thought if steps else ""))
 
         chain = ReasoningChain(
             agent_id=self.agent_id,
             decision_index=self._decision_index,
             model=self.model,
-            prompt_tokens=0,  # filled by stream wrapper
-            completion_tokens=0,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
             steps=steps,
             data_sources=list(context.keys()),
             timestamp=int(time.time()),
@@ -74,31 +89,86 @@ class GlassBoxAgent(ABC):
     def _build_prompt(self, market_id: str, context: dict) -> str:
         return (
             f"Market: {market_id}\n"
-            f"Context: {json.dumps(context, indent=2)}\n\n"
+            f"Context: {json.dumps(context, indent=2, default=str)}\n\n"
             "Reason step-by-step. End with a single line:\n"
             "DECISION: <SPOT_SWAP|LP_DEPOSIT|LP_WITHDRAW|PERP_LONG|PERP_SHORT|HOLD|HEDGE> "
             "signal=<-1..1> size_bps=<0..10000> confidence=<0..1>"
         )
 
-    async def _stream_reasoning(self, prompt: str) -> AsyncIterator[ReasoningStep]:
-        """Stream Claude's response, emitting one ReasoningStep per sentence/paragraph break."""
-        step_num = 0
-        buffer = ""
-        async with self.client.messages.stream(
+    async def _stream_reasoning(self, user_prompt: str) -> AsyncIterator[dict]:
+        """Stream DeepSeek response.
+
+        For deepseek-reasoner, `delta.reasoning_content` carries the CoT and
+        `delta.content` carries the final answer (visible to user). We emit
+        reasoning steps from reasoning_content and the final text from content.
+
+        For deepseek-chat (or non-reasoner models), reasoning_content is None
+        so we synthesize steps by splitting `content` on paragraph breaks.
+        """
+        stream = await self.client.chat.completions.create(
             model=self.model,
+            messages=[
+                {"role": "system", "content": self.system_prompt()},
+                {"role": "user", "content": user_prompt},
+            ],
+            stream=True,
             max_tokens=2048,
-            system=self.system_prompt(),
-            messages=[{"role": "user", "content": prompt}],
-        ) as stream:
-            async for delta in stream.text_stream:
-                buffer += delta
-                while "\n\n" in buffer:
-                    chunk, buffer = buffer.split("\n\n", 1)
-                    step_num += 1
-                    yield ReasoningStep(step=step_num, thought=chunk.strip())
-            if buffer.strip():
+            stream_options={"include_usage": True},
+        )
+
+        reasoning_buffer = ""
+        content_buffer = ""
+        step_num = 0
+        has_native_reasoning = False
+
+        async for chunk in stream:
+            if chunk.choices:
+                delta = chunk.choices[0].delta
+                rc = getattr(delta, "reasoning_content", None)
+                if rc:
+                    has_native_reasoning = True
+                    reasoning_buffer += rc
+                    while "\n\n" in reasoning_buffer:
+                        chunk_text, reasoning_buffer = reasoning_buffer.split("\n\n", 1)
+                        if chunk_text.strip():
+                            step_num += 1
+                            yield {
+                                "kind": "step",
+                                "data": ReasoningStep(step=step_num, thought=chunk_text.strip()),
+                            }
+                if delta.content:
+                    content_buffer += delta.content
+                    if not has_native_reasoning:
+                        while "\n\n" in content_buffer:
+                            chunk_text, content_buffer = content_buffer.split("\n\n", 1)
+                            if chunk_text.strip():
+                                step_num += 1
+                                yield {
+                                    "kind": "step",
+                                    "data": ReasoningStep(step=step_num, thought=chunk_text.strip()),
+                                }
+
+            if chunk.usage:
+                yield {
+                    "kind": "usage",
+                    "in": chunk.usage.prompt_tokens,
+                    "out": chunk.usage.completion_tokens,
+                }
+
+        if reasoning_buffer.strip():
+            step_num += 1
+            yield {
+                "kind": "step",
+                "data": ReasoningStep(step=step_num, thought=reasoning_buffer.strip()),
+            }
+        if content_buffer.strip():
+            if not has_native_reasoning:
                 step_num += 1
-                yield ReasoningStep(step=step_num, thought=buffer.strip())
+                yield {
+                    "kind": "step",
+                    "data": ReasoningStep(step=step_num, thought=content_buffer.strip()),
+                }
+            yield {"kind": "final", "data": content_buffer.strip()}
 
     def _parse_decision(self, market_id: str, final_thought: str) -> Decision:
         line = next(

@@ -16,9 +16,9 @@ import asyncio
 import os
 from typing import Any
 
-import anthropic
 from dotenv import load_dotenv
 from loguru import logger
+from openai import AsyncOpenAI
 
 from ..chronos.agent import Chronos
 from ..devils_advocate.agent import DevilsAdvocate
@@ -40,7 +40,10 @@ async def run_round(market_id: str, agent_ids: dict[str, int]) -> dict[str, Any]
     Returns:
         payload with per-agent decisions, reasoning hashes, fold ensemble result.
     """
-    client = anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = AsyncOpenAI(
+        api_key=os.environ["DEEPSEEK_API_KEY"],
+        base_url=os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+    )
 
     chronos = Chronos(client, agent_id=agent_ids["chronos"])
     web = Web(client, agent_id=agent_ids["web"])
