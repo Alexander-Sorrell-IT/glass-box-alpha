@@ -1,4 +1,4 @@
-# Mantle DevRel Outreach — The Critical Amp-Up Move
+# Mantle DevRel Outreach
 
 **Send: Day 2 (2026-05-27) once Agent Identity NFTs are minted on mainnet so the pitch references real on-chain artifacts.**
 
@@ -13,14 +13,14 @@
 
 > Hey Mantle builders 👋
 >
-> Shipping Glass-Box Alpha for the Turing Test Hackathon — 4 AI trading agents, each reasoning through a different KS60 mathematical operator (Knuth-Sorrellian System, a 60-class original framework I built). Real Mantle DeFi calls, full reasoning chains visible on-chain via the Harvest operator (Class 8), ERC-8004 reputation graded by actual PnL.
+> Shipping Glass-Box Alpha for the Turing Test Hackathon — 4 AI trading agents, each running a different reasoning frame. Real Mantle DeFi calls, full chain-of-thought visible (deepseek-reasoner streams thinking natively), reasoning chains hashed on Mantle via ERC-8004 reputation graded by actual PnL.
 >
-> Mapping:
-> - Chronos → Iterated exponentiation (possibility trees through time)
-> - Devil's Advocate → Null Injection ∅→ (structured emptiness)
-> - Web → Entanglement ⊗ (cross-market linked variables)
-> - Mood → Perpendicular ⊥ (sentiment orthogonal to price)
-> - Ensemble → The Fold (Fundamental Equation `A → n = √((A ↑ n) · (A ↓ n))`)
+> Agent frames:
+> - Chronos → timeline / historical analog mining (possibility trees through time)
+> - Devil's Advocate → contradiction / counter-hypothesis on peer agents
+> - Web → cross-asset correlation (linked-variable compression)
+> - Mood → sentiment as orthogonal-to-price signal
+> - Ensemble → Fold — sign-preserving geometric mean of expansion (Chronos) and collapse (DA + Web + Mood)
 >
 > Hot take: the AI Awakening livestream on July 2-3 deserves an open scoreboard that any competing agent can plug into. So I'm building one. OBS-streaming-ready, 16:9 layout, plug-and-play schema. If anyone wants to integrate their agent into the leaderboard, the spec drops in 48hrs.
 >
@@ -38,7 +38,7 @@
 
 ## DM to Mantle DevRel (Day 2 — personalized)
 
-> Hey [name], building Glass-Box Alpha for the Turing Test hackathon — 4 AI agents trading real Mantle DeFi with visible reasoning chains. Each agent runs on a different operator from KS60 (Knuth-Sorrellian System — my own 60-class mathematical framework already applied to Sovereign cryptocurrency mining). ERC-8004 reputation graded by actual on-chain PnL.
+> Hey [name], building Glass-Box Alpha for the Turing Test hackathon — 4 AI agents trading real Mantle DeFi with visible chain-of-thought (via deepseek-reasoner's native thinking stream). Each agent runs a different reasoning frame; ensemble decision via the Fold (sign-preserving geometric mean of expansion and collapse components). ERC-8004 reputation graded by actual on-chain PnL.
 >
 > Concrete ask: I'm scoping a broadcast view explicitly designed for the July 2-3 AI Awakening livestream — OBS-streaming layout, plug-and-play integration schema any hackathon team's agent can implement to appear on the leaderboard alongside ours.
 >
@@ -50,9 +50,9 @@
 >
 > Either way, the standalone Alpha Arena product ships regardless — but if there's an opportunity to make it the open scoreboard the community sees during AI Awakening, that's where I want to aim.
 >
-> Background: AI Systems Engineer, NVIDIA HGX A100/H100 background, built a 20-class multi-agent orchestration framework managing 6,400+ concurrent program states, identified vulnerabilities in Forta Network. KS60 is my original mathematical work — 60 classes across three interlocking 20-class hierarchies, novel operators (harvest ⟨⟩, null-inject ∅→, entangle ⊗, perpendicular ⊥) with no precedent in standard notation.
+> Background: AI Systems Engineer, NVIDIA HGX A100/H100 hardware background, built a 20-class multi-agent orchestration framework managing 6,400+ concurrent program states, 451-test AI governance methodology across Claude/Copilot/Gemini, identified vulnerabilities in Forta Network.
 >
-> Repo opens Day 3 once contracts are deployed. Happy to share the spec draft now if useful.
+> Repo opening Day 3 once contracts are deployed. Happy to share the spec draft now if useful.
 
 ---
 
@@ -72,7 +72,6 @@
 - ❌ Mass-tag judges in tweets
 - ❌ Pitch Animoca Minds about Consumer track (judge-adjacent, looks like lobbying)
 - ❌ Email pitch decks unsolicited to judging-panel members
-- ❌ Lead with the Sovereign portfolio (too much; KS60 alone is enough hook)
 
 ---
 
@@ -82,6 +81,6 @@
 - Anyone from Mantle Foundation retweets the public Discord post
 - Tencent Cloud rep shows up in the thread
 - 2+ other hackathon teams ask about integrating
-- Allora / Z.ai / Virtuals engineers ask about the KS60 mathematics
+- Allora / Z.ai / Virtuals engineers ask about the agent architecture
 
 Even 1 of these signals is meaningful. All 5 = Grand Champion becomes plausible.

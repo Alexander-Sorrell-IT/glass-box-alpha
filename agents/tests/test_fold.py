@@ -1,9 +1,9 @@
-"""Smoke tests for the Fold ensemble — Fundamental Equation behavior."""
+"""Smoke tests for the Fold ensemble — sign-preserving geometric mean behavior."""
 from __future__ import annotations
 
 import math
 
-from agents.shared.ks60 import fold_ensemble
+from agents.shared.ensemble import fold_ensemble
 
 
 def test_all_bullish_high_confidence():

@@ -18,7 +18,7 @@ For each of our 4 agents, prepare a small JSON file (hosted on IPFS via web3.sto
   "description": "Glass-Box Alpha agent — timeline / cyclical pattern analysis. Reads Nansen historical wallet flows + on-chain TVL/price history.",
   "image": "https://raw.githubusercontent.com/Alexander-Sorrell-IT/glass-box-alpha/main/assets/agents/chronos.png",
   "operator": "Glass-Box Alpha (Mantle Turing Test 2026)",
-  "model": "claude-sonnet-4-6",
+  "model": "deepseek-reasoner",
   "endpoint": "https://glass-box-alpha.vercel.app/api/agents/chronos"
 }
 ```

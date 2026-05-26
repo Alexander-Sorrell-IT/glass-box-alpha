@@ -20,7 +20,7 @@ export function AgentCard({ agentKey, signal, confidence, reasoningPreview, pnlB
     <div className="panel p-4 space-y-3">
       <div className="flex items-baseline justify-between">
         <h3 className={`text-lg font-semibold ${meta.color}`}>{meta.name}</h3>
-        <span className="badge bg-border text-signal-neutral">{meta.operator}</span>
+        <span className="badge bg-border text-signal-neutral">{meta.frame}</span>
       </div>
       <p className="text-sm text-signal-neutral">{meta.role}</p>
 

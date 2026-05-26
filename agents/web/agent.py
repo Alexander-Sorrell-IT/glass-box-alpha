@@ -1,4 +1,4 @@
-"""Web — entanglement / cross-asset correlation agent."""
+"""Web — cross-asset correlation / linked-variable analysis agent."""
 from __future__ import annotations
 
 from typing import Any
@@ -34,6 +34,6 @@ class Web(GlassBoxAgent):
             "market_id": market_id,
             "base_asset_flows": base_flows,
             "related_asset_flows": related_flows,
-            "candidate_entanglements": related,
+            "candidate_linkages": related,
             "note": "Find cross-asset wallet cohorts: when one moves, which others follow within 4h?",
         }

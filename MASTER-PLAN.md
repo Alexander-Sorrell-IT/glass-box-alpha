@@ -26,7 +26,7 @@ Capture as many of these 7 prize buckets as humanly possible with 2 BUIDLs:
 
 **BUIDL #1 — Glass-Box Alpha** (primary build, 85% of effort)
 - Cross-tagged: Consumer & Viral DApps + AI Trading & Strategy
-- 4 LLM agents (Chronos, Devil's Advocate, Web, Mood) running KS60 operators
+- 4 LLM agents (Chronos, Devil's Advocate, Web, Mood) running distinct reasoning frames
 - Live reasoning chains, ERC-8004 reputation, real on-chain trades on Mantle DEXes
 - Fold ensemble computes final call from 4 agent outputs
 
@@ -62,7 +62,7 @@ Capture as many of these 7 prize buckets as humanly possible with 2 BUIDLs:
 
 ### Day 5 (May 30) — Backend integration + Reasoning-chain UI
 - [ ] Run `agents/orchestrator/main.py` end-to-end with real Nansen + Elfa data (test 5 markets)
-- [ ] Tune KS60 system prompts based on actual output quality
+- [ ] Tune agent system prompts based on actual output quality
 - [ ] Build live reasoning-chain stream component in frontend (Server-Sent Events or WebSocket)
 - [ ] Day 2 of build-in-public on X — "Here's what Chronos's reasoning looks like" with screenshot
 
@@ -115,18 +115,18 @@ Capture as many of these 7 prize buckets as humanly possible with 2 BUIDLs:
 - [ ] **DM Mantle DevRel follow-up #1** with mainnet proof of life
 - [ ] Day 11 build-in-public
 
-### Days 15-16 (Jun 9-10) — Kit extraction (BUIDL #2) + KS60 spec
+### Days 15-16 (Jun 9-10) — Kit extraction (BUIDL #2) + architecture spec
 - [ ] Create new GitHub repo: `glassbox-agent-kit`
 - [ ] Extract: orchestrator + base agent class + ERC-8004 hooks + reasoning-hash module
 - [ ] Publish to npm (`@glassbox/agent-kit`) and pip (`glassbox-agent-kit`)
 - [ ] Write SDK README with 5-min quickstart + 1 reference example agent
-- [ ] **Write KS60 formal spec markdown** (4-6 pages, Classes 1-8 with worked examples) → publish in `docs/ks60-spec.md`
+- [ ] **Write agent-architecture spec** (4-6 pages, full reasoning-frame + Fold ensemble math + reasoning-hash flow with worked examples) → publish in `docs/agent-architecture.md`
 - [ ] Day 12-13 build-in-public — drop the kit publicly, ask devs to integrate
 
-### Day 17 (Jun 11) — Sovereign Reasoning Coin + KOL outreach
-- [ ] Deploy `SovereignReasoningCoin.sol` ERC-20 on Mantle Mainnet (Round 11 hybrid graft)
-- [ ] Each Harvest commit mints a non-transferable reputation token to the producing agent
-- [ ] Small Fold function periodically combines low-rep tokens to higher tier (uses KS60 Class 1 math only — production-ready)
+### Day 17 (Jun 11) — Reasoning Reputation Token + KOL outreach
+- [ ] Deploy `ReasoningRepToken.sol` ERC-20 on Mantle Mainnet
+- [ ] Each reasoning-hash commit mints a non-transferable reputation token to the producing agent
+- [ ] Periodic combine function rolls low-rep tokens into higher tier (simple math)
 - [ ] **Pay 1 Mantle-ecosystem KOL for retweet** ($300 cap)
 - [ ] DM 5-10 crypto-AI researchers (Delphi, Messari, Allora community) with working demo + ask for honest feedback. One quote-RT = 10× profile alone.
 - [ ] Day 14 build-in-public
@@ -189,7 +189,7 @@ Capture as many of these 7 prize buckets as humanly possible with 2 BUIDLs:
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| KS60 dismissed as "labeled sqrt" by Allora | High | Ship 4-6 page KS60 spec markdown (Day 15-16). Lead public-facing pitch with on-chain reasoning hashes, not KS60 math. |
+| Fold ensemble dismissed as "labeled sqrt" by Allora | Medium | Ship 4-6 page agent-architecture spec showing the actual decision-process flow + a 90-day backtest comparing Fold vs vanilla mean baseline. Lead public-facing pitch with on-chain reasoning hashes, not ensemble math. |
 | Live PnL underwater on demo day | High | Demo videos pre-recorded with best-case scenarios + supplementary backtest data |
 | ClawHack veterans dominate Trading | High | Don't fight on PnL track record. Lead Consumer; Trading is bonus. |
 | Designer ghosts | Medium | Fall back to Tailwind UI + shadcn templates by Day 8 if no contract locked by Day 4 EOD |
@@ -219,7 +219,7 @@ In order of what to drop first:
 1. Multiple DEX integrations (keep Merchant Moe only)
 2. Sound design + animations beyond basic
 3. KOL paid retweet
-4. Sovereign Reasoning Coin ERC-20 graft
+4. Reasoning Reputation Token ERC-20 graft
 5. Backtest harness (use forward-looking only)
 6. `glassbox-agent-kit` extraction (revert to single-BUIDL Arena-only)
 7. Devil's Advocate agent (cut to 3 agents)
@@ -241,8 +241,8 @@ In order of what to drop first:
 - ✅ Nansen + Elfa tagged + ideally retweeted at least once each
 - ✅ At least 1 paid KOL retweet
 - ✅ Forta-style public security finding posted (credibility move)
-- ✅ KS60 spec markdown live in repo
-- ✅ Sovereign Reasoning Coin ERC-20 deployed
+- ✅ Agent-architecture spec markdown live in repo
+- ✅ Reasoning Reputation Token ERC-20 deployed
 - ✅ Sound mental health, ready for QVAC hackathon Jun 19-21
 
 ---

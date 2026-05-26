@@ -19,7 +19,7 @@ from typing import AsyncIterator
 from loguru import logger
 from openai import AsyncOpenAI
 
-from .ks60 import SYSTEM_PROMPTS
+from .ensemble import SYSTEM_PROMPTS
 from .types import AgentName, Decision, DecisionType, ReasoningChain, ReasoningStep
 
 
@@ -37,7 +37,7 @@ class GlassBoxAgent(ABC):
         self._decision_index = 0
 
     def system_prompt(self) -> str:
-        """Agent's KS60 operator system prompt. Override for custom behavior."""
+        """Agent's reasoning-frame system prompt. Override for custom behavior."""
         return SYSTEM_PROMPTS[self.name]
 
     @abstractmethod

@@ -1,4 +1,4 @@
-"""Mood — sentiment / perpendicular-dimension agent."""
+"""Mood — sentiment as orthogonal-to-price signal agent."""
 from __future__ import annotations
 
 from typing import Any
@@ -23,6 +23,6 @@ class Mood(GlassBoxAgent):
             "sentiment_7d": sentiment_7d,
             "note": (
                 "Compute sentiment magnitude × (1 - correlation_with_price). "
-                "High perpendicular = decoupled from price = leading indicator."
+                "High orthogonal value = decoupled from price = leading indicator."
             ),
         }

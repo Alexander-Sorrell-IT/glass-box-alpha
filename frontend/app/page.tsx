@@ -8,9 +8,9 @@ import { Leaderboard } from "@/components/Leaderboard";
 const DEMO_STEPS: ReasoningStep[] = [
   { agent: "chronos", step: 1, thought: "Pulling 30d Nansen smart-money flows on mETH/USDC…", ts: 0 },
   { agent: "chronos", step: 2, thought: "Net inflow +$1.2M from 7 wallets with 30d win-rate >0.65", ts: 0 },
-  { agent: "web", step: 1, thought: "Entanglement check: when mETH inflows >$500k, USDC pool depth contracts within 4h (73% historical)", ts: 0 },
-  { agent: "mood", step: 1, thought: "Elfa sentiment 24h: +0.42 (avg), delta_24h +0.15. Perpendicular component large.", ts: 0 },
-  { agent: "devils_advocate", step: 1, thought: "Null inject: what if the 7 wallets are coordinated wash trade? Cross-check with TX hash pattern…", ts: 0 },
+  { agent: "web", step: 1, thought: "Linkage check: when mETH inflows >$500k, USDC pool depth contracts within 4h (73% historical)", ts: 0 },
+  { agent: "mood", step: 1, thought: "Elfa sentiment 24h: +0.42 (avg), delta_24h +0.15. Orthogonal component large.", ts: 0 },
+  { agent: "devils_advocate", step: 1, thought: "Counter-hypothesis: what if the 7 wallets are coordinated wash trade? Cross-check funding-graph proximity…", ts: 0 },
 ];
 
 const DEMO_LEADERBOARD = [
@@ -62,7 +62,7 @@ export default function Home() {
             agentKey="mood"
             signal={0.38}
             confidence={0.66}
-            reasoningPreview="Sentiment net +0.42 (24h avg), perpendicular component large vs price action. Decoupled = leading."
+            reasoningPreview="Sentiment net +0.42 (24h avg), orthogonal component large vs price action. Decoupled = leading."
           />
         </div>
 
