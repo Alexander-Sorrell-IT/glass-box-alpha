@@ -78,9 +78,13 @@ def fold_ensemble(chronos_signal: float, da_signal: float, web_signal: float, mo
                   chronos_conf: float, da_conf: float, web_conf: float, mood_conf: float) -> tuple[float, float]:
     """The Fold (Sideways-Arrow) — Fundamental Equation A → n = √((A ↑ n) · (A ↓ n)).
 
-    Up-Arrow score = Chronos's expansion (possibility-tree convergence).
+    Up-Arrow score = Chronos's expansion (possibility-tree convergence, signed).
     Down-Arrow score = signed geometric mean of the 3 collapse agents (DA, Web, Mood).
-    Final signal = sign-preserving sqrt of their product.
+    Final signal = sign-preserving geometric mean of up and down magnitudes.
+
+    When up and down agree on direction, the Fold returns that direction at full
+    magnitude. When they disagree, magnitude is dampened (0.4×) toward the
+    higher-conviction side.
 
     Returns (signal, confidence). Signal in [-1, 1]. Confidence in [0, 1].
     """
@@ -92,21 +96,29 @@ def fold_ensemble(chronos_signal: float, da_signal: float, web_signal: float, mo
     mood_signed = mood_signal * mood_conf
 
     # Down-Arrow component = signed geometric mean of the 3 collapse agents.
-    # We average their magnitudes then re-sign by majority direction.
-    down_magnitudes = abs(da_signed) * abs(web_signed) * abs(mood_signed)
-    down_mag_geom = down_magnitudes ** (1 / 3) if down_magnitudes > 0 else 0.0
-
-    down_sign_sum = (1 if da_signed >= 0 else -1) + (1 if web_signed >= 0 else -1) + (1 if mood_signed >= 0 else -1)
-    down_sign = 1 if down_sign_sum > 0 else -1 if down_sign_sum < 0 else 0
-    down_signed = down_sign * down_mag_geom
-
-    # Fundamental Equation: geometric mean of up and down components.
-    product = up_signed * down_signed
-    if product == 0:
+    down_components = [da_signed, web_signed, mood_signed]
+    down_mag_product = abs(da_signed) * abs(web_signed) * abs(mood_signed)
+    if down_mag_product == 0 or up_signed == 0:
         return 0.0, 0.0
 
-    fold_signal = (1 if product > 0 else -1) * math.sqrt(abs(product))
-    # Confidence = product of agent confidences raised to 1/4 (4-agent geometric mean).
+    down_geom_mag = down_mag_product ** (1 / 3)
+    sign_votes = sum(1 if x > 0 else -1 if x < 0 else 0 for x in down_components)
+    down_sign = 1 if sign_votes > 0 else -1 if sign_votes < 0 else 0
+    down_signed = down_sign * down_geom_mag
+
+    # Sign-preserving Fold: geometric mean of |up| and |down|, signed by direction-agreement.
+    up_sign = 1 if up_signed > 0 else -1
+    down_sign_final = 1 if down_signed > 0 else -1
+    magnitude = math.sqrt(abs(up_signed) * abs(down_signed))
+
+    if up_sign == down_sign_final:
+        fold_signal = up_sign * magnitude
+    else:
+        # Disagreement: dampen 0.4×, sign goes to higher-conviction side.
+        dominant_sign = up_sign if abs(up_signed) >= abs(down_signed) else down_sign_final
+        fold_signal = dominant_sign * magnitude * 0.4
+
+    # Confidence = geometric mean of 4 agent confidences.
     confidence = (chronos_conf * da_conf * web_conf * mood_conf) ** 0.25
 
     return fold_signal, confidence

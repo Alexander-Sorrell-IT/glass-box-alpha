@@ -1,69 +1,117 @@
 """Glass-Box Alpha orchestrator.
 
-Runs all 4 agents in parallel on a market signal, collects their decisions +
-reasoning chains, commits reasoning hashes on-chain, and emits ensemble verdict.
+Runs all 4 agents on a market signal, collects decisions + reasoning chains,
+applies the Fold ensemble, returns final call + per-agent receipts ready for
+on-chain commit.
 
-Adapted from ECHO orchestrator — agent base class transfers; agent identities
-(Chronos/DA/Web/Mood) and tools are project-specific.
+Flow:
+  1. Chronos, Web, Mood reason in parallel (gather context + LLM call)
+  2. Devil's Advocate is fed their outputs, then reasons
+  3. Fold ensemble combines all 4 signals into final call + confidence
+  4. Return payload with reasoning hashes ready for ReasoningHashAnchor.commit
 """
 from __future__ import annotations
 
 import asyncio
 import os
-from typing import TYPE_CHECKING
+from typing import Any
 
 import anthropic
 from dotenv import load_dotenv
 from loguru import logger
 
-if TYPE_CHECKING:
-    from ..shared.base import GlassBoxAgent
+from ..chronos.agent import Chronos
+from ..devils_advocate.agent import DevilsAdvocate
+from ..mood.agent import Mood
+from ..shared.ks60 import fold_ensemble
+from ..shared.types import Decision, ReasoningChain
+from ..web.agent import Web
 
 load_dotenv()
 
 
-async def run_round(market_id: str, agents: list["GlassBoxAgent"]) -> dict:
-    """One full decision round: all agents reason in parallel."""
-    results = await asyncio.gather(*[agent.reason(market_id) for agent in agents])
+async def run_round(market_id: str, agent_ids: dict[str, int]) -> dict[str, Any]:
+    """One full decision round on a market.
 
-    payload = {
+    Args:
+        market_id: e.g. "mETH/USDC"
+        agent_ids: mapping of agent name -> ERC-8004 agent_id (from Day 2 mints)
+
+    Returns:
+        payload with per-agent decisions, reasoning hashes, fold ensemble result.
+    """
+    client = anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+    chronos = Chronos(client, agent_id=agent_ids["chronos"])
+    web = Web(client, agent_id=agent_ids["web"])
+    mood = Mood(client, agent_id=agent_ids["mood"])
+    devils_advocate = DevilsAdvocate(client, agent_id=agent_ids["devils_advocate"])
+
+    # 1. Run Chronos / Web / Mood in parallel
+    logger.info(f"[round] market={market_id} — launching Chronos/Web/Mood in parallel")
+    parallel_results = await asyncio.gather(
+        chronos.reason(market_id),
+        web.reason(market_id),
+        mood.reason(market_id),
+    )
+    chronos_decision, chronos_chain = parallel_results[0]
+    web_decision, web_chain = parallel_results[1]
+    mood_decision, mood_chain = parallel_results[2]
+
+    # 2. Feed peer outputs to Devil's Advocate
+    devils_advocate.set_peer_outputs({
+        "chronos": {"decision": chronos_decision.model_dump(), "reasoning": chronos_chain.model_dump()},
+        "web": {"decision": web_decision.model_dump(), "reasoning": web_chain.model_dump()},
+        "mood": {"decision": mood_decision.model_dump(), "reasoning": mood_chain.model_dump()},
+    })
+    logger.info(f"[round] running Devil's Advocate with peer context")
+    da_decision, da_chain = await devils_advocate.reason(market_id)
+
+    # 3. Fold ensemble
+    final_signal, confidence = fold_ensemble(
+        chronos_signal=chronos_decision.directional_signal,
+        da_signal=da_decision.directional_signal,
+        web_signal=web_decision.directional_signal,
+        mood_signal=mood_decision.directional_signal,
+        chronos_conf=chronos_decision.confidence,
+        da_conf=da_decision.confidence,
+        web_conf=web_decision.confidence,
+        mood_conf=mood_decision.confidence,
+    )
+    logger.info(f"[round] Fold ensemble: signal={final_signal:+.3f} confidence={confidence:.3f}")
+
+    # 4. Compute reasoning hashes for on-chain commit
+    return {
         "market_id": market_id,
-        "agent_outputs": [],
+        "ensemble": {
+            "directional_signal": final_signal,
+            "confidence": confidence,
+        },
+        "agents": [
+            _agent_record("chronos", chronos, chronos_decision, chronos_chain),
+            _agent_record("web", web, web_decision, web_chain),
+            _agent_record("mood", mood, mood_decision, mood_chain),
+            _agent_record("devils_advocate", devils_advocate, da_decision, da_chain),
+        ],
     }
 
-    for agent, (decision, chain) in zip(agents, results, strict=True):
-        reasoning_hash = agent.reasoning_hash(chain)
-        payload["agent_outputs"].append({
-            "agent_name": agent.name,
-            "agent_id": agent.agent_id,
-            "decision": decision.model_dump(),
-            "reasoning_hash": reasoning_hash.hex(),
-            "reasoning_chain": chain.model_dump(),
-        })
-        logger.info(f"[{agent.name}] decided {decision.kind.name} signal={decision.directional_signal:+.2f}")
 
-    return payload
+def _agent_record(name: str, agent: Any, decision: Decision, chain: ReasoningChain) -> dict[str, Any]:
+    return {
+        "name": name,
+        "agent_id": agent.agent_id,
+        "decision": decision.model_dump(),
+        "reasoning_hash": agent.reasoning_hash(chain).hex(),
+        "reasoning_chain": chain.model_dump(),
+    }
 
 
 async def main() -> None:
-    client = anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-
-    # Agent IDs filled in after Day 2 mainnet mints.
-    # from ..chronos.agent import Chronos
-    # from ..devils_advocate.agent import DevilsAdvocate
-    # from ..web.agent import Web
-    # from ..mood.agent import Mood
-
-    # agents = [
-    #     Chronos(client, agent_id=0),
-    #     DevilsAdvocate(client, agent_id=0),
-    #     Web(client, agent_id=0),
-    #     Mood(client, agent_id=0),
-    # ]
-
-    # result = await run_round("mETH/USDC", agents)
-    # logger.info(result)
-    logger.info("Orchestrator scaffold ready. Implement agents/{chronos,devils_advocate,web,mood}/agent.py next.")
+    # Placeholder agent_ids — replace with real Mantle mainnet token IDs after Day 2 mints.
+    agent_ids = {"chronos": 1, "web": 2, "mood": 3, "devils_advocate": 4}
+    result = await run_round("mETH/USDC", agent_ids)
+    import json
+    print(json.dumps(result, indent=2, default=str))
 
 
 if __name__ == "__main__":
