@@ -4,6 +4,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AgentCard } from "@/components/AgentCard";
 import { ReasoningStream, type ReasoningStep } from "@/components/ReasoningStream";
 import { Leaderboard } from "@/components/Leaderboard";
+import { LiveStatus } from "@/components/LiveStatus";
 
 const DEMO_STEPS: ReasoningStep[] = [
   { agent: "chronos", step: 1, thought: "Pulling 30d Nansen smart-money flows on mETH/USDC…", ts: 0 },
@@ -31,6 +32,9 @@ export default function Home() {
           <p className="text-sm text-signal-neutral mt-1">
             AI trading agents on Mantle · reasoning attested on-chain
           </p>
+          <div className="mt-2">
+            <LiveStatus />
+          </div>
         </div>
         <ConnectButton />
       </header>
