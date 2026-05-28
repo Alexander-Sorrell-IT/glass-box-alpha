@@ -10,11 +10,12 @@ __pycache__/
 venv/
 .DS_Store
 
-# Foundry
-cache/
-broadcast/run-*/
-broadcast/*/run-*/
-lib/
+# Foundry (scope to contracts/ only — must NOT ignore frontend/lib/)
+contracts/cache/
+contracts/out/
+contracts/lib/
+contracts/broadcast/run-*/
+contracts/broadcast/*/run-*/
 
 # Runs
 runs/
