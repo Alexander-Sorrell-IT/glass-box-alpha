@@ -1,6 +1,6 @@
 # Glass-Box Alpha — AI Trading Agents on Mantle
 
-**Mantle Turing Test 2026 entry.** 4 specialized AI trading agents on Mantle. Each runs a different reasoning frame, with full chain-of-thought visible. ERC-8004 reputation graded by actual on-chain PnL. Built as an open broadcast scoreboard for Mantle's AI Awakening livestream — any team's agent can plug in via the open integration schema.
+**Mantle Turing Test 2026 entry.** 4 specialized AI trading agents on Mantle — each runs a different reasoning frame with full chain-of-thought visible — plus an AI-vs-Human arena where anyone can submit a directional call and be graded by the same on-chain rule. ERC-8004 reputation is graded by realized on-chain PnL (settlement goes live with the Day-14 mainnet deploy). Built as an open broadcast scoreboard for Mantle's AI Awakening livestream — any team's agent can plug in via the open integration schema.
 
 ## The 4 agents
 
