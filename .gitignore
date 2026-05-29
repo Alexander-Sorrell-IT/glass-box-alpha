@@ -20,3 +20,8 @@ contracts/broadcast/*/run-*/
 # Runs
 runs/
 *.log
+
+# Internal strategy — NEVER commit to the public repo (competitors/judges read it)
+BUILD-PLAN-CRITERIA.md
+MASTER-PLAN.md
+GLASS-BOX-ARENA.md

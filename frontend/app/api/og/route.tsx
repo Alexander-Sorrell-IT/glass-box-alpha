@@ -34,6 +34,14 @@ export async function GET(request: Request) {
   const pnl = searchParams.get("pnl") ? parseFloat(searchParams.get("pnl")!) : null;
   const round = searchParams.get("round") ?? "—";
 
+  // Optional human-vs-agent result overlay (the "AI vs Human" share card).
+  const humanScore = searchParams.get("human");
+  const agentScore = searchParams.get("agent");
+  const vsName = searchParams.get("vs") ?? "the AI";
+  const beat = searchParams.get("beat") === "1";
+  const hasMatchup = humanScore !== null && agentScore !== null;
+  const fmtB = (v: string) => (parseFloat(v) >= 0 ? `+${v}` : v);
+
   const agents = [
     { name: "Chronos", value: parseFloat(searchParams.get("chronos") ?? "0"), color: "#5dade2" },
     { name: "Devil's Advocate", value: parseFloat(searchParams.get("da") ?? "0"), color: "#ff8c5a" },
@@ -77,8 +85,40 @@ export async function GET(request: Request) {
           </div>
         </div>
 
+        {/* Human-vs-agent matchup banner (only on share cards) */}
+        {hasMatchup && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 40,
+              backgroundColor: COLORS.panel,
+              border: `2px solid ${beat ? COLORS.bull : COLORS.bear}`,
+              borderRadius: 20,
+              padding: "28px 40px",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: 26, color: COLORS.neutral, letterSpacing: 2 }}>YOU</span>
+              <span style={{ fontSize: 64, color: beat ? COLORS.bull : COLORS.text, fontWeight: 700 }}>
+                {fmtB(humanScore!)} bps
+              </span>
+            </div>
+            <span style={{ fontSize: 40, color: beat ? COLORS.bull : COLORS.bear, fontWeight: 700 }}>
+              {beat ? `BEAT ${vsName.toUpperCase()}` : `${vsName.toUpperCase()} WON`}
+            </span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+              <span style={{ fontSize: 26, color: COLORS.neutral, letterSpacing: 2 }}>{vsName.toUpperCase()}</span>
+              <span style={{ fontSize: 64, color: COLORS.text, fontWeight: 700 }}>
+                {fmtB(agentScore!)} bps
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Agent signals row */}
-        <div style={{ display: "flex", gap: 20, marginTop: 56 }}>
+        <div style={{ display: "flex", gap: 20, marginTop: hasMatchup ? 28 : 56 }}>
           {agents.map((a) => (
             <div
               key={a.name}

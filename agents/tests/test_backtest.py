@@ -128,16 +128,39 @@ def test_run_backtest_produces_full_report():
     assert isinstance(report.to_dict(), dict)
 
 
-def test_run_backtest_with_edge_outperforms_no_edge():
-    """When synthetic agents have positive edge, the Fold ensemble's Sharpe should be positive on average."""
-    # Run multiple seeds to smooth out luck
-    sharpes = []
+def test_fold_converts_agent_edge_into_sharpe():
+    """The honest acceptance gate: when the synthetic agents are predictive
+    (edge=0.15), the Fold's risk-adjusted return is meaningfully higher than when
+    the agents are pure noise (edge=0.0). This asserts the property we actually
+    claim — the system converts agent edge into risk-adjusted return — NOT the
+    false claim that the Fold beats a mean (its direction is parity with a mean)."""
+    edge_sharpes, noise_sharpes = [], []
     for seed in range(50, 60):
-        report = run_backtest(market="mETH/USDC", days=180, seed=seed)
-        sharpes.append(report.fold["sharpe"])
-    avg = sum(sharpes) / len(sharpes)
-    # With edge=0.15 (the default), we expect non-trivial Sharpe on average
-    assert avg > 0.0, f"avg Fold Sharpe across seeds = {avg:.3f}, expected > 0"
+        edge_sharpes.append(run_backtest(market="mETH/USDC", days=180, seed=seed, edge=0.15).fold["sharpe"])
+        noise_sharpes.append(run_backtest(market="mETH/USDC", days=180, seed=seed, edge=0.0).fold["sharpe"])
+    avg_edge = sum(edge_sharpes) / len(edge_sharpes)
+    avg_noise = sum(noise_sharpes) / len(noise_sharpes)
+    assert avg_edge > avg_noise, (
+        f"edge Sharpe {avg_edge:.3f} should beat no-edge {avg_noise:.3f}"
+    )
+
+
+def test_ensemble_beats_average_single_agent():
+    """The honest ensemble claim, asserted over the SAME 200 seeds the docs cite:
+    the confidence-weighted consensus of 4 frames has a higher Sharpe than the
+    AVERAGE single agent, and a shallower drawdown than the WORST single agent, in
+    every one of 200 seeds — i.e. combining beats committing to one frame. (This is
+    the literal backing for the '200/200' claim in ensemble.py / README / the spec.)"""
+    trials = list(range(200))
+    fold_wins = dd_wins = 0
+    for seed in trials:
+        r = run_backtest(market="mETH/USDC", days=180, seed=seed, edge=0.15)
+        if r.fold["sharpe"] > r.single_agent["avg_sharpe"]:
+            fold_wins += 1
+        if r.fold["max_drawdown"] >= r.single_agent["worst_max_drawdown"]:
+            dd_wins += 1
+    assert fold_wins == len(trials), f"ensemble Sharpe beat avg single agent in only {fold_wins}/{len(trials)}"
+    assert dd_wins == len(trials), f"ensemble drawdown beat worst single agent in only {dd_wins}/{len(trials)}"
 
 
 def test_format_report_renders():

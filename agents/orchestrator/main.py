@@ -23,7 +23,7 @@ from openai import AsyncOpenAI
 from ..chronos.agent import Chronos
 from ..devils_advocate.agent import DevilsAdvocate
 from ..mood.agent import Mood
-from ..shared.ks60 import fold_ensemble
+from ..shared.ensemble import fold_ensemble
 from ..shared.types import Decision, ReasoningChain
 from ..web.agent import Web
 

@@ -7,6 +7,7 @@ export const REASONING_HASH_ANCHOR_MAINNET = "" as `0x${string}` | "";
 export const GLASSBOX_REGISTRY_MAINNET = "" as `0x${string}` | "";
 export const ROUND_STATE_MAINNET = "" as `0x${string}` | "";
 export const SOVEREIGN_REASONING_COIN_MAINNET = "" as `0x${string}` | "";
+export const HUMAN_ARENA_MAINNET = "" as `0x${string}` | "";
 
 // Agent ERC-8004 token IDs — set after Day 4 mints on mainnet.
 export const AGENT_IDS = {

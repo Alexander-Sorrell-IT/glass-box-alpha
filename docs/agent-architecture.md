@@ -2,7 +2,7 @@
 
 **Mantle Turing Test 2026 entry. Read this if you're judging the project or integrating with the SDK.**
 
-This is a multi-agent on-chain trading system. Four LLM agents each apply a distinct reasoning frame to the same market signal. Their outputs are combined by a sign-preserving geometric-mean ensemble called the Fold. Every reasoning chain is hashed on Mantle for verifiable receipts. Execution is gated by hard-coded risk caps and a Devil's-Advocate veto.
+This is a multi-agent on-chain trading system. Four LLM agents each apply a distinct reasoning frame to the same market signal. Their outputs are combined by a confidence-weighted consensus called the Fold. Every reasoning chain is hashed on Mantle for verifiable receipts. Execution is gated by hard-coded risk caps and a Devil's-Advocate veto.
 
 ---
 
@@ -27,59 +27,27 @@ Devil's Advocate runs **after** Chronos / Web / Mood so it can stress-test their
 
 Each agent emits a `(signal, confidence)` tuple where signal ∈ [-1, 1] and confidence ∈ [0, 1]. The Fold combines all four into a final `(signal, confidence)`.
 
-### Step 1 — Sign each agent's signal
+### The aggregation
 
-For agent `A` with signal `s_A` and confidence `c_A`:
+The Fold is a **confidence-weighted consensus** of the four frames:
 ```
-S_A = s_A · c_A
-```
-This is the agent's confidence-weighted signed signal.
-
-### Step 2 — Compute the Expansion component
-
-Chronos is the expansion agent (it generates possibility trees). Its signed signal IS the expansion:
-```
-U = S_chronos
-```
-
-### Step 3 — Compute the Collapse component
-
-The three collapse agents (Devil's Advocate, Web, Mood) collapse the possibility space toward a single direction. Take the signed geometric mean of their magnitudes, signed by majority:
-
-```
-mag_D = (|S_DA| · |S_Web| · |S_Mood|)^(1/3)
-sign_D = sign(sum(sign(S_DA) + sign(S_Web) + sign(S_Mood)))
-D = sign_D · mag_D
-```
-
-### Step 4 — The Fold (Fundamental Geometric Mean)
-
-When `U` and `D` agree on direction:
-```
-F = sign(U) · sqrt(|U| · |D|)
-```
-
-When they disagree (one bullish, one bearish), magnitude is **dampened** to 40% and the higher-conviction side wins:
-```
-dominant_sign = sign(U) if |U| ≥ |D| else sign(D)
-F = dominant_sign · sqrt(|U| · |D|) · 0.4
-```
-
-### Step 5 — Final confidence
-
-Geometric mean of the four agent confidences:
-```
+F = Σ (signal_i · confidence_i) / Σ confidence_i
 C = (c_chronos · c_DA · c_Web · c_Mood)^(1/4)
 ```
+That is the whole rule. Each agent votes with its direction and magnitude, weighted by how confident it is. No agent is privileged; there is no geometric mean of signals and no magnitude dampener. Final confidence is the geometric mean of the four confidences, so overall conviction is capped by the least-sure agent.
 
-The Fold returns `(F, C)` — final signed signal and final confidence.
+The Fold returns `(F, C)`.
 
-### Why this rather than arithmetic mean
+### What we claim — and what we do not
 
-Arithmetic mean averages noise. Geometric mean **emphasizes agreement** — when Expansion and Collapse paths converge despite using different methods, that's a higher-conviction signal than four similar agents happening to agree. When they disagree, the 0.4× dampener prevents the system from acting on weak consensus.
+We make **no claim that the Fold beats a simple mean**. It *is* a confidence-weighted mean; claiming otherwise would be dishonest, and a judge can read the one line above and verify it.
+
+The honest, verified value is an **ensemble-vs-single-agent** property: you do not know in advance which frame will be right, and the confidence-weighted consensus of all four beats the **average single agent's Sharpe in 200/200 backtest seeds**, beats the **worst single agent in 200/200**, and has shallower drawdown than the worst single agent in 200/200 (see §[backtest]). Combining diverse frames beats committing to one — the standard, defensible reason ensembles exist.
+
+The differentiator of this project is **verifiable on-chain reasoning + four genuinely distinct frames + the AI-vs-human arena** — not the aggregation arithmetic. The arithmetic is deliberately the simplest thing that works.
 
 Implementation: [`agents/shared/ensemble.py:fold_ensemble`](../agents/shared/ensemble.py)
-Tests: [`agents/tests/test_fold.py`](../agents/tests/test_fold.py) — 6 unit tests covering convergence, divergence, sign preservation, magnitude bounds, and confidence aggregation.
+Tests: [`agents/tests/test_fold.py`](../agents/tests/test_fold.py) — unit tests pinning the confidence-weighted-mean identity, confidence aggregation, and magnitude bounds; the ensemble-beats-single-agent property is gated in [`test_backtest.py`](../agents/tests/test_backtest.py).
 
 ---
 
@@ -186,32 +154,25 @@ DA receives the other three reasoning chains as context, then produces:
 For each agent: `ReasoningHashAnchor.commit(agentId, decisionIndex, sha3_256(reasoning_json))`.
 Then: `RoundState.recordSubmission(roundId, agentId, kind, signal*1e18, sizeBps, reasoningHash)`.
 
-### Step E — Fold ensemble
+### Step E — Fold ensemble (confidence-weighted consensus)
 
 ```
-S_chronos = 0.62 · 0.74 = 0.459
-S_DA      = -0.15 · 0.55 = -0.083
-S_Web     = 0.48 · 0.71 = 0.341
-S_Mood    = 0.38 · 0.66 = 0.251
+weighted sum = (0.62·0.74) + (-0.15·0.55) + (0.48·0.71) + (0.38·0.66)
+             =  0.459      +  -0.083      +  0.341      +  0.251
+             =  0.968
+conf sum     =  0.74 + 0.55 + 0.71 + 0.66 = 2.66
 
-U = S_chronos = 0.459
-|S_DA · S_Web · S_Mood| = 0.083 · 0.341 · 0.251 = 0.00710
-mag_D = 0.00710^(1/3) = 0.192
-sign_D = sign(-1 + 1 + 1) = +1
-D = +0.192
-
-U and D agree (both positive) →
-F = +sqrt(0.459 · 0.192) = +sqrt(0.0881) = +0.297
-C = (0.74 · 0.55 · 0.71 · 0.66)^(1/4) = 0.659
+F = 0.968 / 2.66 = +0.364
+C = (0.74 · 0.55 · 0.71 · 0.66)^(1/4) = 0.660
 ```
 
-Fold output: signal = **+0.297**, confidence = **0.659**.
+Fold output: signal = **+0.364**, confidence = **0.660**. (Devil's Advocate's bearish −0.15 pulls the consensus down from Chronos's +0.62, weighted by each one's confidence — exactly what a consensus should do.)
 
 ### Step F — Risk gate
 
 ```
-- Confidence 0.659 = 6590 bps ≥ 5000 bps floor ✓
-- |signal| = 0.297 > 0.05 threshold ✓
+- Confidence 0.660 = 6600 bps ≥ 5000 bps floor ✓
+- |signal| = 0.364 > 0.05 threshold ✓
 - Devil's Advocate: signal = -0.15, conf = 0.55 — NOT a veto (DA didn't pick HOLD with signal=0) ✓
 ```
 
@@ -221,17 +182,17 @@ Trade gate passes.
 
 ```
 size_bps = MAX_TRADE_BPS · |signal| · confidence
-         = 500 · 0.297 · 0.659
-         = 97.86 → rounded to 98 bps = 0.98% of $200 = $1.96
+         = 500 · 0.364 · 0.660
+         = 120.1 → rounded to 120 bps = 1.20% of $200 = $2.40
 ```
 
 (Conservative. The cap is 500 bps but actual sizing is risk-weighted by signal and confidence.)
 
 ### Step H — Execute on-chain
 
-`AgentExecutor.executeTrade(roundId=17, ensembleSignal=2970, ensembleConfBps=6590, daVetoed=false, tokenIn=USDC, tokenOut=mETH, sizeBps=98, minAmountOut=…)`.
+`AgentExecutor.executeTrade(roundId=17, ensembleSignal=3640, ensembleConfBps=6600, daVetoed=false, tokenIn=USDC, tokenOut=mETH, sizeBps=120, minAmountOut=…)`.
 
-Swap routes through Merchant Moe V3 USDC/mETH pool. ~$1.96 of USDC swapped to mETH.
+Swap routes through Merchant Moe V3 USDC/mETH pool. ~$2.40 of USDC swapped to mETH.
 
 ### Step I — Settle after 24h
 
@@ -262,7 +223,7 @@ See [`docs/integration-spec/SCHEMA.md`](integration-spec/SCHEMA.md) for the on-c
 | Component | What it requires | Why competitors won't have it |
 |---|---|---|
 | 4-agent ensemble with distinct reasoning frames | Disciplined prompt engineering + Fold math | Most projects use a single LLM with one prompt |
-| Fold ensemble (sign-preserving geometric mean) | Math + 6 unit tests | Most projects use arithmetic mean if anything |
+| Fold ensemble (confidence-weighted consensus, beats avg single agent 200/200 seeds) | Math + unit tests + 200-seed gate | Most projects use one LLM, no ensemble, no backtest |
 | Reasoning-hash on-chain attestation | Smart contract + canonical hashing | Most don't bother with verifiability |
 | Risk-capped execution (5%/50%/20%/DA-veto) | Solidity + 10 unit tests | Most ship without drawdown guards |
 | Tiered non-transferable reputation token | ERC-20 + tier-roll math + 9 tests | Most don't build secondary primitives |

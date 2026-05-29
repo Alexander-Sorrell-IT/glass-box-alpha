@@ -5,6 +5,7 @@ import { AgentCard } from "@/components/AgentCard";
 import { ReasoningStream, type ReasoningStep } from "@/components/ReasoningStream";
 import { Leaderboard } from "@/components/Leaderboard";
 import { LiveStatus } from "@/components/LiveStatus";
+import { HumanCall } from "@/components/HumanCall";
 
 const DEMO_STEPS: ReasoningStep[] = [
   { agent: "chronos", step: 1, thought: "Pulling 30d Nansen smart-money flows on mETH/USDC…", ts: 0 },
@@ -39,9 +40,15 @@ export default function Home() {
         <ConnectButton />
       </header>
 
+      {/* The thesis made real: a human can actually play against the agents. */}
+      <section className="mb-8 max-w-2xl">
+        <HumanCall />
+      </section>
+
       <section className="mb-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-signal-neutral mb-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-signal-neutral mb-3 flex items-center gap-2">
           Current Round — mETH/USDC
+          <span className="badge bg-border text-signal-neutral text-[10px]">SIMULATED — illustrative</span>
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <AgentCard
@@ -80,7 +87,13 @@ export default function Home() {
               <span className="text-sm text-signal-neutral">conf 66%</span>
             </div>
           </div>
-          <button className="button-primary">View on Mantlescan →</button>
+          <button
+            className="button-primary opacity-50 cursor-not-allowed"
+            disabled
+            title="Available once contracts deploy to Mantle"
+          >
+            View on Mantlescan (post-deploy) →
+          </button>
         </div>
       </section>
 

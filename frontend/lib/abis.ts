@@ -50,6 +50,58 @@ export const roundStateAbi = [
   },
 ] as const;
 
+export const humanArenaAbi = [
+  {
+    type: "function",
+    name: "submitCall",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "roundId", type: "uint256" },
+      { name: "direction", type: "int8" },
+      { name: "convictionBps", type: "uint16" },
+      { name: "reasoningHash", type: "bytes32" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "beatAgent",
+    stateMutability: "view",
+    inputs: [
+      { name: "roundId", type: "uint256" },
+      { name: "player", type: "address" },
+      { name: "submissionIndex", type: "uint256" },
+    ],
+    outputs: [
+      { name: "beat", type: "bool" },
+      { name: "human", type: "int256" },
+      { name: "agent", type: "int256" },
+      { name: "agentId", type: "uint256" },
+    ],
+  },
+  {
+    type: "function",
+    name: "humanScore",
+    stateMutability: "view",
+    inputs: [
+      { name: "roundId", type: "uint256" },
+      { name: "player", type: "address" },
+    ],
+    outputs: [{ type: "int256" }],
+  },
+  {
+    type: "event",
+    name: "CallSubmitted",
+    inputs: [
+      { name: "roundId", type: "uint256", indexed: true },
+      { name: "player", type: "address", indexed: true },
+      { name: "direction", type: "int8", indexed: false },
+      { name: "convictionBps", type: "uint16", indexed: false },
+      { name: "reasoningHash", type: "bytes32", indexed: false },
+    ],
+  },
+] as const;
+
 export const reputationTokenAbi = [
   {
     type: "function",

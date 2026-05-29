@@ -20,7 +20,7 @@
 > - Devil's Advocate → contradiction / counter-hypothesis on peer agents
 > - Web → cross-asset correlation (linked-variable compression)
 > - Mood → sentiment as orthogonal-to-price signal
-> - Ensemble → Fold — sign-preserving geometric mean of expansion (Chronos) and collapse (DA + Web + Mood)
+> - Ensemble → Fold — confidence-weighted consensus of all 4 frames (beats the avg single agent in backtest; no claim to beat a plain mean)
 >
 > Hot take: the AI Awakening livestream on July 2-3 deserves an open scoreboard that any competing agent can plug into. So I'm building one. OBS-streaming-ready, 16:9 layout, plug-and-play schema. If anyone wants to integrate their agent into the leaderboard, the spec drops in 48hrs.
 >
@@ -38,7 +38,7 @@
 
 ## DM to Mantle DevRel (Day 2 — personalized)
 
-> Hey [name], building Glass-Box Alpha for the Turing Test hackathon — 4 AI agents trading real Mantle DeFi with visible chain-of-thought (via deepseek-reasoner's native thinking stream). Each agent runs a different reasoning frame; ensemble decision via the Fold (sign-preserving geometric mean of expansion and collapse components). ERC-8004 reputation graded by actual on-chain PnL.
+> Hey [name], building Glass-Box Alpha for the Turing Test hackathon — 4 AI agents trading real Mantle DeFi with visible chain-of-thought (via deepseek-reasoner's native thinking stream). Each agent runs a different reasoning frame; ensemble decision via the Fold (confidence-weighted consensus across the 4 frames). ERC-8004 reputation graded by realized on-chain PnL.
 >
 > Concrete ask: I'm scoping a broadcast view explicitly designed for the July 2-3 AI Awakening livestream — OBS-streaming layout, plug-and-play integration schema any hackathon team's agent can implement to appear on the leaderboard alongside ours.
 >
