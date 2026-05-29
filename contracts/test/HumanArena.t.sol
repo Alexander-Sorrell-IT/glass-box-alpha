@@ -168,4 +168,23 @@ contract HumanArenaTest is Test {
         assertEq(agentId, 1);
         assertEq(s, 60); // sign(-) * (-150) * 4000/10000 = +60
     }
+
+    function test_HumanScoreNegativePnL() public {
+        uint256 id = _openWithChronos(62e16, 2500);
+        vm.prank(alice);
+        arena.submitCall(id, 1, 10_000, bytes32(0)); // bull, full conviction
+        _settle(id, -90);                            // market down => bull call loses
+        assertEq(arena.humanScore(id, alice), -90);
+    }
+
+    function test_ZeroPnLResultsInTie() public {
+        uint256 id = _openWithChronos(62e16, 2500);
+        vm.prank(alice);
+        arena.submitCall(id, 1, 8000, bytes32(0));
+        _settle(id, 0);                              // flat market => everyone scores 0
+        (bool beat, int256 human, int256 agent,) = arena.beatAgent(id, alice, 0);
+        assertEq(human, 0);
+        assertEq(agent, 0);
+        assertFalse(beat);                           // a tie is not a win (strict >)
+    }
 }

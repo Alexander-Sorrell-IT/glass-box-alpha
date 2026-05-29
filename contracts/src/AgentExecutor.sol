@@ -60,6 +60,8 @@ contract AgentExecutor {
     error TradeSizeExceedsCap();
     error DevilsAdvocateVeto();
     error NoSwapRouter();
+    error TransferFailed();
+    error ApprovalFailed();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -72,6 +74,7 @@ contract AgentExecutor {
     }
 
     constructor(address _seedToken, uint256 _seedAmount, address _swapRouter) {
+        if (_swapRouter == address(0)) revert NoSwapRouter();
         owner = msg.sender;
         seedToken = _seedToken;
         seedAmount = _seedAmount;
@@ -79,6 +82,7 @@ contract AgentExecutor {
     }
 
     function setSwapRouter(address newRouter) external onlyOwner {
+        if (newRouter == address(0)) revert NoSwapRouter();
         swapRouter = ISwapRouter(newRouter);
         emit RouterUpdated(newRouter);
     }
@@ -118,8 +122,8 @@ contract AgentExecutor {
         }
 
         uint256 amountIn = (seedAmount * sizeBps) / BPS_DENOMINATOR;
-        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
-        IERC20(tokenIn).approve(address(swapRouter), amountIn);
+        if (!IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn)) revert TransferFailed();
+        if (!IERC20(tokenIn).approve(address(swapRouter), amountIn)) revert ApprovalFailed();
 
         amountOut = swapRouter.swapExactTokensForTokens(
             tokenIn,

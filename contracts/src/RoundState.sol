@@ -69,7 +69,7 @@ contract RoundState {
         int256 directionalSignal,
         uint256 sizeBps,
         bytes32 reasoningHash
-    ) external {
+    ) external onlySettler {
         Round storage r = _rounds[roundId];
         if (r.status != RoundStatus.Open) revert WrongStatus();
         r.submissions.push(AgentSubmission({

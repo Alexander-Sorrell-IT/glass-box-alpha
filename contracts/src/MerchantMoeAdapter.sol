@@ -41,6 +41,8 @@ contract MerchantMoeAdapter is ISwapRouter {
     event ParamsUpdated(uint256 binStep, uint256 deadlineWindow);
 
     error NotOwner();
+    error TransferFailed();
+    error ApprovalFailed();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -69,8 +71,8 @@ contract MerchantMoeAdapter is ISwapRouter {
         address recipient
     ) external returns (uint256 amountOut) {
         // Caller (AgentExecutor) must have approved this adapter to pull tokenIn.
-        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
-        IERC20(tokenIn).approve(address(lbRouter), amountIn);
+        if (!IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn)) revert TransferFailed();
+        if (!IERC20(tokenIn).approve(address(lbRouter), amountIn)) revert ApprovalFailed();
 
         ILBRouter.Path memory path = _buildDirectPath(tokenIn, tokenOut);
 

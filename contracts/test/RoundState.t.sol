@@ -66,4 +66,27 @@ contract RoundStateTest is Test {
         vm.expectRevert(RoundState.NotSettler.selector);
         rs.setEnsemble(id, 0);
     }
+
+    function test_RevertNonSettlerSubmission() public {
+        // Anyone could previously forge agent submissions — now gated to the settler.
+        uint256 id = rs.openRound(MARKET);
+        vm.prank(alice);
+        vm.expectRevert(RoundState.NotSettler.selector);
+        rs.recordSubmission(id, 1, IGlassBoxAgent.DecisionType.PERP_LONG, 5e17, 1000, keccak256("forged"));
+    }
+
+    function test_RevertSettleTwice() public {
+        uint256 id = rs.openRound(MARKET);
+        rs.setEnsemble(id, 1);
+        rs.settle(id, 42);
+        // Round is now Settled; a second settle must revert (status no longer Pending).
+        vm.expectRevert(RoundState.WrongStatus.selector);
+        rs.settle(id, 99);
+    }
+
+    function test_GetSubmissionOutOfBounds() public {
+        uint256 id = rs.openRound(MARKET);
+        vm.expectRevert(); // array index OOB panic
+        rs.getSubmission(id, 0);
+    }
 }
