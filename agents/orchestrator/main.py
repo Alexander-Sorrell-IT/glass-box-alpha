@@ -40,8 +40,14 @@ async def run_round(market_id: str, agent_ids: dict[str, int]) -> dict[str, Any]
     Returns:
         payload with per-agent decisions, reasoning hashes, fold ensemble result.
     """
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "DEEPSEEK_API_KEY is not set. Copy .env.example to .env and add your key "
+            "(get one free at https://platform.deepseek.com)."
+        )
     client = AsyncOpenAI(
-        api_key=os.environ["DEEPSEEK_API_KEY"],
+        api_key=api_key,
         base_url=os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
     )
 
