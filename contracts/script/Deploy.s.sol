@@ -21,17 +21,24 @@ import { HumanArena } from "../src/HumanArena.sol";
 ///   forge script script/Deploy.s.sol --rpc-url mantle_sepolia --broadcast --verify   # Sepolia first
 ///   forge script script/Deploy.s.sol --rpc-url mantle_mainnet --broadcast --verify   # Mainnet after
 contract Deploy is Script {
+    // Exposed so a test (and post-run tooling) can read + assert wiring.
+    ReasoningHashAnchor public anchor;
+    GlassBoxRegistry public registry;
+    RoundState public roundState;
+    ReasoningRepToken public repToken;
+    HumanArena public humanArena;
+
     function run() external {
         uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address settler = vm.envOr("SETTLER_ADDRESS", vm.addr(deployerKey));
 
         vm.startBroadcast(deployerKey);
 
-        ReasoningHashAnchor anchor = new ReasoningHashAnchor();
-        GlassBoxRegistry registry = new GlassBoxRegistry();
-        RoundState roundState = new RoundState(settler);
-        ReasoningRepToken repToken = new ReasoningRepToken(settler);
-        HumanArena humanArena = new HumanArena(address(roundState)); // guarded: roundState now has code
+        anchor = new ReasoningHashAnchor();
+        registry = new GlassBoxRegistry();
+        roundState = new RoundState(settler);
+        repToken = new ReasoningRepToken(settler);
+        humanArena = new HumanArena(address(roundState)); // guarded: roundState now has code
 
         vm.stopBroadcast();
 
