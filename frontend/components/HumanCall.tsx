@@ -57,6 +57,8 @@ export function HumanCall() {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setDirection(1)}
+              aria-label="Predict bullish"
+              aria-pressed={direction === 1}
               className={`py-3 rounded-lg border font-semibold transition ${
                 direction === 1
                   ? "bg-signal-bull/15 border-signal-bull text-signal-bull"
@@ -67,6 +69,8 @@ export function HumanCall() {
             </button>
             <button
               onClick={() => setDirection(-1)}
+              aria-label="Predict bearish"
+              aria-pressed={direction === -1}
               className={`py-3 rounded-lg border font-semibold transition ${
                 direction === -1
                   ? "bg-signal-bear/15 border-signal-bear text-signal-bear"
@@ -90,6 +94,8 @@ export function HumanCall() {
               step={500}
               value={convictionBps}
               onChange={(e) => setConvictionBps(Number(e.target.value))}
+              aria-label="Conviction percent"
+              aria-valuetext={`${(convictionBps / 100).toFixed(0)} percent`}
               className="w-full accent-accent"
             />
             <p className="text-[10px] text-signal-neutral/70 mt-1">
@@ -149,7 +155,14 @@ function ResultView({ result, onReset }: { result: ArenaResult; onReset: () => v
 
       {/* The actual share card — what unfurls on X */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={ogUrl} alt="Your round result card" className="w-full rounded-lg border border-border" />
+      <img
+        src={ogUrl}
+        alt={`Round result: you ${fmtBps(result.human)} bps vs ${result.agentName} ${fmtBps(result.agent)} bps`}
+        className="w-full rounded-lg border border-border"
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+        }}
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <button onClick={share} className="button-primary py-3">

@@ -6,7 +6,12 @@ import { ReasoningStream, type ReasoningStep } from "@/components/ReasoningStrea
 import { Leaderboard } from "@/components/Leaderboard";
 import { LiveStatus } from "@/components/LiveStatus";
 import { HumanCall } from "@/components/HumanCall";
+import { useIsLive, useRoundsCount, useRound } from "@/lib/useGlassBox";
+import { ROUND_STATE_MAINNET, type AgentKey } from "@/lib/contracts";
 
+// Demo fixtures — shown ONLY before contracts deploy (clearly labelled SIMULATED).
+// Once live, every panel reads on-chain or shows an honest "awaiting" state, so the
+// LIVE badge never sits over fabricated numbers.
 const DEMO_STEPS: ReasoningStep[] = [
   { agent: "chronos", step: 1, thought: "Pulling 30d Nansen smart-money flows on mETH/USDC…", ts: 0 },
   { agent: "chronos", step: 2, thought: "Net inflow +$1.2M from 7 wallets with 30d win-rate >0.65", ts: 0 },
@@ -24,7 +29,25 @@ const DEMO_LEADERBOARD = [
   { rank: 6, name: "Devil's Advocate", isAgent: true, agentId: 2, trades: 14, winRatePct: 50.0, pnlPct: -0.43 },
 ];
 
+const DEMO_AGENTS: { agentKey: AgentKey; signal: number; confidence: number; reasoningPreview: string }[] = [
+  { agentKey: "chronos", signal: 0.62, confidence: 0.74, reasoningPreview: "30d smart-money net inflow positive; 5 of 7 top wallets accumulating. 24h analog suggests +3-5% within 48h." },
+  { agentKey: "devils_advocate", signal: -0.15, confidence: 0.55, reasoningPreview: "Three of the 7 wallets share funding-graph proximity. Could be coordinated. Reducing conviction." },
+  { agentKey: "web", signal: 0.48, confidence: 0.71, reasoningPreview: "When mETH inflows >$500k, USDC pool depth contracts within 4h in 73% of past 30d cases. Front-run probable." },
+  { agentKey: "mood", signal: 0.38, confidence: 0.66, reasoningPreview: "Sentiment net +0.42 (24h avg), orthogonal component large vs price action. Decoupled = leading." },
+];
+
+const STATUS_LABEL = ["Open", "Pending", "Settled", "Cancelled"];
+
+function fmtSignal(v: number): string {
+  return v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2);
+}
+
 export default function Home() {
+  const { isLive } = useIsLive();
+  const { roundsCount } = useRoundsCount();
+  const currentRoundId = roundsCount && roundsCount > 0 ? roundsCount - 1 : undefined;
+  const { round } = useRound(currentRoundId);
+
   return (
     <main className="min-h-screen px-6 py-8 max-w-7xl mx-auto">
       <header className="flex items-center justify-between mb-8">
@@ -48,61 +71,84 @@ export default function Home() {
       <section className="mb-8">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-signal-neutral mb-3 flex items-center gap-2">
           Current Round — mETH/USDC
-          <span className="badge bg-border text-signal-neutral text-[10px]">SIMULATED — illustrative</span>
+          {!isLive ? (
+            <span className="badge bg-border text-signal-neutral text-[10px]">SIMULATED — illustrative</span>
+          ) : (
+            currentRoundId !== undefined && (
+              <span className="badge bg-signal-bull/15 text-signal-bull text-[10px]">
+                Round #{currentRoundId}{round ? ` · ${STATUS_LABEL[round.status] ?? "?"}` : ""}
+              </span>
+            )
+          )}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <AgentCard
-            agentKey="chronos"
-            signal={0.62}
-            confidence={0.74}
-            reasoningPreview="30d smart-money net inflow positive; 5 of 7 top wallets accumulating. 24h analog suggests +3-5% within 48h."
-          />
-          <AgentCard
-            agentKey="devils_advocate"
-            signal={-0.15}
-            confidence={0.55}
-            reasoningPreview="Three of the 7 wallets share funding-graph proximity. Could be coordinated. Reducing conviction."
-          />
-          <AgentCard
-            agentKey="web"
-            signal={0.48}
-            confidence={0.71}
-            reasoningPreview="When mETH inflows >$500k, USDC pool depth contracts within 4h in 73% of past 30d cases. Front-run probable."
-          />
-          <AgentCard
-            agentKey="mood"
-            signal={0.38}
-            confidence={0.66}
-            reasoningPreview="Sentiment net +0.42 (24h avg), orthogonal component large vs price action. Decoupled = leading."
-          />
-        </div>
+
+        {!isLive ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {DEMO_AGENTS.map((a) => (
+              <AgentCard key={a.agentKey} {...a} />
+            ))}
+          </div>
+        ) : (
+          <div className="panel p-6 text-sm text-signal-neutral">
+            Live on Mantle. Per-agent signals + reasoning stream as each round opens and settles —
+            on-chain submission reads wire in with the settler/indexer.
+          </div>
+        )}
 
         <div className="panel p-4 mt-4 flex items-center justify-between">
           <div>
-            <span className="text-sm text-signal-neutral uppercase tracking-wider">
-              Fold Ensemble
-            </span>
+            <span className="text-sm text-signal-neutral uppercase tracking-wider">Fold Ensemble</span>
             <div className="flex items-baseline gap-3 mt-1">
-              <span className="text-3xl font-mono text-signal-bull">+0.41</span>
-              <span className="text-sm text-signal-neutral">conf 66%</span>
+              {!isLive ? (
+                <>
+                  <span className="text-3xl font-mono text-signal-bull">+0.41</span>
+                  <span className="text-sm text-signal-neutral">conf 66%</span>
+                </>
+              ) : round ? (
+                <>
+                  <span
+                    className={`text-3xl font-mono ${round.ensembleSignal >= 0 ? "text-signal-bull" : "text-signal-bear"}`}
+                  >
+                    {fmtSignal(round.ensembleSignal)}
+                  </span>
+                  {round.status === 2 && (
+                    <span className={`text-sm ${round.realizedPnlBps >= 0 ? "text-signal-bull" : "text-signal-bear"}`}>
+                      PnL {round.realizedPnlBps >= 0 ? "+" : ""}{(round.realizedPnlBps / 100).toFixed(2)}%
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-3xl font-mono text-signal-neutral">—</span>
+              )}
             </div>
           </div>
-          <button
-            className="button-primary opacity-50 cursor-not-allowed"
-            disabled
-            title="Available once contracts deploy to Mantle"
-          >
-            View on Mantlescan (post-deploy) →
-          </button>
+          {isLive && ROUND_STATE_MAINNET ? (
+            <a
+              className="button-primary"
+              href={`https://mantlescan.xyz/address/${ROUND_STATE_MAINNET}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on Mantlescan →
+            </a>
+          ) : (
+            <button
+              className="button-primary opacity-50 cursor-not-allowed"
+              disabled
+              title="Available once contracts deploy to Mantle"
+            >
+              View on Mantlescan (post-deploy) →
+            </button>
+          )}
         </div>
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
-          <Leaderboard rows={DEMO_LEADERBOARD} />
+          <Leaderboard rows={isLive ? [] : DEMO_LEADERBOARD} />
         </div>
         <div>
-          <ReasoningStream steps={DEMO_STEPS} />
+          <ReasoningStream steps={isLive ? [] : DEMO_STEPS} />
         </div>
       </section>
 
