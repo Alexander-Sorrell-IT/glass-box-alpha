@@ -9,13 +9,13 @@ content — Glass-Box transparency comes for free.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import time
 from abc import ABC, abstractmethod
 from typing import AsyncIterator
 
+from eth_utils import keccak  # real Ethereum keccak256 — must match Solidity + viem
 from loguru import logger
 from openai import AsyncOpenAI
 
@@ -81,10 +81,25 @@ class GlassBoxAgent(ABC):
         return decision, chain
 
     @staticmethod
+    def canonical_receipt(chain: ReasoningChain) -> bytes:
+        """The exact, language-neutral bytes that get sealed into the on-chain receipt.
+
+        Deterministic JSON: keys sorted, compact separators, UTF-8, integer-only
+        numbers (ReasoningChain carries no floats — token counts, steps, timestamps
+        are all ints). The frontend reproduces these bytes verbatim to recompute the
+        keccak256 in-browser, and the contract's verify() re-hashes the same bytes, so
+        this spec MUST stay byte-for-byte in lockstep with frontend/lib/receipt.ts.
+        """
+        return json.dumps(
+            chain.model_dump(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @staticmethod
     def reasoning_hash(chain: ReasoningChain) -> bytes:
-        """keccak-equivalent: sha3-256 of canonical JSON. Match against on-chain commit."""
-        canonical = json.dumps(chain.model_dump(), sort_keys=True, separators=(",", ":"))
-        return hashlib.sha3_256(canonical.encode()).digest()
+        """Ethereum keccak256 of the canonical receipt — byte-identical to an in-browser
+        viem.keccak256 recompute and to the contract's keccak256(canonicalJson). This is
+        what makes the 'recompute it yourself' verifiability claim literally true."""
+        return keccak(GlassBoxAgent.canonical_receipt(chain))
 
     def _build_prompt(self, market_id: str, context: dict) -> str:
         return (

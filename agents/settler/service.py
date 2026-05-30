@@ -220,8 +220,10 @@ class SettlerService:
 
     @staticmethod
     def _market_hash(market_id: str) -> bytes:
-        import hashlib
-        return hashlib.sha3_256(market_id.encode()).digest()
+        # keccak256(bytes(marketId)) — matches Solidity keccak256 / the bytes32 marketId
+        # used on-chain. (Was sha3_256, which is a DIFFERENT digest and would never match.)
+        from eth_utils import keccak
+        return keccak(market_id.encode())
 
     @staticmethod
     def _resolve_tokens(market_id: str, signal: float) -> dict[str, str]:
