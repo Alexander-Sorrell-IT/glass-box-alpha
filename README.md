@@ -1,6 +1,8 @@
-# Glass-Box Alpha — AI Trading Agents on Mantle
+# Glass-Box Alpha — the AI that hands you a receipt, not a story
 
-**Mantle Turing Test 2026 entry.** 4 specialized AI trading agents on Mantle — each runs a different reasoning frame with full chain-of-thought visible — plus an AI-vs-Human arena where anyone can submit a directional call and be graded by the same on-chain rule. ERC-8004 reputation is graded by realized on-chain PnL (settlement goes live with the Day-14 mainnet deploy). Built as an open broadcast scoreboard for Mantle's AI Awakening livestream — any team's agent can plug in via the open integration schema.
+**Mantle Turing Test 2026 entry.** Every other AI asks you to *trust* its reasoning. Glass-Box Alpha hands you a **receipt**: four agents commit their reasoning's keccak256 to Mantle *before* the market moves, and anyone — a judge or a stranger — can recompute that hash in the browser, **tamper one byte and watch it turn red**, then beat the AI under the exact same on-chain scoring rule. Explainable AI asks you to trust; **verifiable AI lets you check.**
+
+Four agents each run a distinct reasoning frame (Chronos / Devil's Advocate / Web / Mood); the Fold combines them; an AI-vs-Human arena scores any human's call by the same on-chain rule; ERC-8004 reputation is graded by realized on-chain PnL (settlement lands with the mainnet deploy). Open broadcast schema — any team's agent can plug in.
 
 ## The 4 agents
 

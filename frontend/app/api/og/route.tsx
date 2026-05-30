@@ -178,8 +178,8 @@ export async function GET(request: Request) {
 
         {/* Footer */}
         <div style={{ display: "flex", marginTop: "auto", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 22, color: COLORS.neutral }}>
-            Every reasoning chain hashed on-chain · verifiable
+          <span style={{ fontSize: 22, color: COLORS.accent }}>
+            recompute the hash yourself →
           </span>
           <span style={{ fontSize: 22, color: COLORS.neutral }}>@GlassBoxAlpha</span>
         </div>

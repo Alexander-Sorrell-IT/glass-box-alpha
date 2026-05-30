@@ -23,7 +23,7 @@ Vanity prefix `0x8004…` comes from CREATE2 mining — same prefix across chain
 | Contract | Purpose | Status |
 |---|---|---|
 | `RoundState.sol` | Per-round state (question, agents, settlements) | Day 7 |
-| `ReasoningHashAnchor.sol` | Commits agent reasoning chain hash on-chain (Verity primitive) | Day 7 |
+| `ReasoningHashAnchor.sol` | Commits the keccak256 of each agent's reasoning receipt on-chain; `verify()` re-hashes the raw JSON so anyone can prove it wasn't tampered (the Reasoning Receipt primitive) | Day 7 |
 | `AgentExecutor.sol` | Routes ensemble decision to Mantle DEX swap/LP | Day 8-9 |
 | `BroadcastSchema.sol` (kit) | Standard interface other teams implement to appear on broadcast leaderboard | Day 15 |
 
