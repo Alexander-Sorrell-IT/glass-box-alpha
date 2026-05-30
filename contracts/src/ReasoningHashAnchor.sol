@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// Anchors agent reasoning chain hashes on-chain. The Verity primitive.
-/// Each agent calls commit() with the keccak256 of its full reasoning chain JSON
-/// before publishing the JSON off-chain. Later, anyone can verify the off-chain
-/// JSON wasn't tampered with by recomputing the hash.
+/// Anchors agent reasoning-chain hashes on-chain — the Reasoning Receipt primitive.
+/// Each agent calls commit() with the keccak256 of its canonical reasoning receipt
+/// BEFORE the market settles. Later, anyone recomputes the hash from the published
+/// JSON via verify() — edit one byte and it stops matching. Verifiable, not "trust me."
 contract ReasoningHashAnchor {
     struct Commit {
         uint256 agentId;
@@ -51,5 +51,22 @@ contract ReasoningHashAnchor {
         uint256 idx = commitIndexOf[agentId][decisionIndex];
         require(idx != 0, "no commit");
         return commits[idx - 1];
+    }
+
+    /// Recompute the receipt hash from the raw canonical JSON and compare it to the
+    /// stored on-chain commit. Powers the in-browser tamper test: pass the published
+    /// reasoning bytes and `ok` is true; flip a single byte and `ok` flips to false.
+    /// `canonicalJson` must be the exact bytes the agent hashed (see
+    /// agents/shared/base.py canonical_receipt / frontend/lib/receipt.ts).
+    function verify(uint256 agentId, uint256 decisionIndex, bytes calldata canonicalJson)
+        external
+        view
+        returns (bool ok, bytes32 stored, bytes32 recomputed)
+    {
+        uint256 idx = commitIndexOf[agentId][decisionIndex];
+        require(idx != 0, "no commit");
+        stored = commits[idx - 1].reasoningHash;
+        recomputed = keccak256(canonicalJson);
+        ok = (recomputed == stored);
     }
 }

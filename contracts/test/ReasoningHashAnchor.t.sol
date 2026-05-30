@@ -44,4 +44,32 @@ contract ReasoningHashAnchorTest is Test {
         anchor.commit(agentId, decisionIndex, hash);
         assertEq(anchor.getCommit(agentId, decisionIndex).reasoningHash, hash);
     }
+
+    // ---- the tamper test: verify() recomputes keccak256 of the raw JSON ----
+
+    function test_VerifyMatchesUntamperedReceipt() public {
+        bytes memory receipt = bytes('{"agent_id":1,"steps":[{"step":1,"thought":"bullish"}]}');
+        anchor.commit(1, 0, keccak256(receipt));
+
+        (bool ok, bytes32 stored, bytes32 recomputed) = anchor.verify(1, 0, receipt);
+        assertTrue(ok);
+        assertEq(stored, recomputed);
+        assertEq(stored, keccak256(receipt));
+    }
+
+    function test_VerifyFailsOnSingleByteTamper() public {
+        bytes memory receipt = bytes('{"agent_id":1,"steps":[{"step":1,"thought":"bullish"}]}');
+        anchor.commit(1, 0, keccak256(receipt));
+
+        // Flip one character: "bullish" -> "Bullish". The recompute diverges.
+        bytes memory tampered = bytes('{"agent_id":1,"steps":[{"step":1,"thought":"Bullish"}]}');
+        (bool ok, bytes32 stored, bytes32 recomputed) = anchor.verify(1, 0, tampered);
+        assertFalse(ok);
+        assertTrue(stored != recomputed);
+    }
+
+    function test_VerifyRevertsWhenNoCommit() public {
+        vm.expectRevert(bytes("no commit"));
+        anchor.verify(99, 0, bytes("anything"));
+    }
 }
