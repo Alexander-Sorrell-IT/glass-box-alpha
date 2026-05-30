@@ -46,10 +46,21 @@ export function HumanCall() {
           <span className="badge bg-border text-signal-neutral text-[10px]">SIMULATED ROUND</span>
         )}
       </div>
-      <p className="text-xs text-signal-neutral mb-4">
+      <p className="text-xs text-signal-neutral mb-3">
         Round #{DEMO_ROUND.roundId} · {DEMO_ROUND.market} · no capital needed — you predict, you&apos;re
         graded on-chain by the same rule as the agents.
       </p>
+
+      {!result && (
+        <div className="rounded-lg border border-border bg-bg/40 p-3 mb-4 text-xs">
+          <span className="text-signal-neutral">The AI is split — </span>
+          <span className="text-signal-bull font-semibold">Chronos: 🟢 BULL</span>
+          <span className="text-signal-neutral"> · </span>
+          <span className="text-signal-bear font-semibold">Devil&apos;s Advocate: 🔴 BEAR</span>
+          <span className="text-signal-neutral">. Chronos showed its work — </span>
+          <span className="text-accent font-semibold">spot what it missed.</span>
+        </div>
+      )}
 
       {!result ? (
         <div className="space-y-4">

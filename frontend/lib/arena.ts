@@ -28,8 +28,11 @@ export const DEMO_ROUND = {
   signals: { signal: 0.41, confidence: 66, chronos: 0.62, da: -0.15, web: 0.48, mood: 0.38 },
   // Chronos's on-chain-style submission, scored under the same rule.
   chronos: { name: "Chronos", direction: 1 as Direction, convictionBps: 2500 },
-  // Simulated realized move for this round (the market went up 120bps).
-  realizedPnlBps: 120,
+  // The honest twist: the AI consensus was BULLISH (Fold +0.41, Chronos +0.62) but
+  // Devil's Advocate dissented (-0.15) — and the market DROPPED 120bps. So a human who
+  // sided with the skeptic out-reasons the AI. (Not rigged: going bull here LOSES,
+  // exactly as it should.) Scoring stays in lockstep with HumanArena.sol.
+  realizedPnlBps: -120,
 };
 
 export interface ArenaResult {
