@@ -6,6 +6,7 @@ import { ReasoningStream, type ReasoningStep } from "@/components/ReasoningStrea
 import { Leaderboard } from "@/components/Leaderboard";
 import { LiveStatus } from "@/components/LiveStatus";
 import { HumanCall } from "@/components/HumanCall";
+import { VerifyPanel } from "@/components/VerifyPanel";
 import { useIsLive, useRoundsCount, useRound } from "@/lib/useGlassBox";
 import { ROUND_STATE_MAINNET, type AgentKey } from "@/lib/contracts";
 
@@ -62,6 +63,15 @@ export default function Home() {
         </div>
         <ConnectButton />
       </header>
+
+      {/* The keynote: an AI that hands you a receipt, not a story — verify it yourself. */}
+      <section className="mb-4">
+        <p className="text-base text-signal-neutral mb-3">
+          Every other AI asks you to <em>trust</em> its reasoning. This one hands you a{" "}
+          <span className="text-accent font-semibold">receipt</span> — recompute the hash yourself.
+        </p>
+        <VerifyPanel />
+      </section>
 
       {/* The thesis made real: a human can actually play against the agents. */}
       <section className="mb-8 max-w-2xl">
