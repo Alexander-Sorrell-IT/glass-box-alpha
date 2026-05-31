@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useReadContract } from "wagmi";
 import { canonicalReceipt, hashCanonical, receiptHash, type ReasoningChain } from "@/lib/receipt";
 import { REASONING_HASH_ANCHOR_MAINNET } from "@/lib/contracts";
+import { reasoningAnchorAbi } from "@/lib/abis";
 
 // A real Chronos reasoning chain (demo). Its keccak256 is the "on-chain commit" the
 // panel checks against — identical to what agents/shared/base.py would commit.
@@ -39,8 +41,25 @@ export function VerifyPanel() {
       return "0x";
     }
   }, [text]);
-  const matches = recomputed === COMMITTED_HASH;
+
   const live = REASONING_HASH_ANCHOR_MAINNET.length === 42;
+
+  // Read the REAL on-chain commit for (Chronos agentId=1, decisionIndex=17) from
+  // Mantle Sepolia. The tamper test then checks the recompute against the literal
+  // value stored on-chain — not a client-side constant.
+  const { data: onChainCommit } = useReadContract({
+    address: live ? (REASONING_HASH_ANCHOR_MAINNET as `0x${string}`) : undefined,
+    abi: reasoningAnchorAbi,
+    functionName: "getCommit",
+    args: [BigInt(DEMO_CHAIN.agent_id), BigInt(DEMO_CHAIN.decision_index)],
+    chainId: 5003,
+    query: { enabled: live },
+  });
+  const onChainHash = (onChainCommit as { reasoningHash?: `0x${string}` } | undefined)?.reasoningHash;
+  // Prefer the on-chain value when available; fall back to the locally computed hash.
+  const committedHash = onChainHash ?? COMMITTED_HASH;
+  const verifiedOnChain = !!onChainHash;
+  const matches = recomputed === committedHash;
 
   return (
     <section className={`panel p-5 border ${matches ? "border-signal-bull/50" : "border-signal-bear"}`}>
@@ -81,8 +100,10 @@ export function VerifyPanel() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 font-mono text-[11px]">
         <div>
-          <div className="text-signal-neutral/60 uppercase tracking-wider text-[10px]">On-chain commit</div>
-          <div className="text-signal-neutral">{short(COMMITTED_HASH)}</div>
+          <div className="text-signal-neutral/60 uppercase tracking-wider text-[10px]">
+            On-chain commit{verifiedOnChain && <span className="text-signal-bull"> · read from Mantle ✓</span>}
+          </div>
+          <div className="text-signal-neutral">{short(committedHash)}</div>
         </div>
         <div>
           <div className="text-signal-neutral/60 uppercase tracking-wider text-[10px]">Your recompute (live)</div>
