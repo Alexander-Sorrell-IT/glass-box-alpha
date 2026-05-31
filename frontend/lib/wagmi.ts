@@ -29,6 +29,8 @@ export const mantleSepolia = defineChain({
 export const wagmiConfig = getDefaultConfig({
   appName: "Glass-Box Alpha",
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "placeholder",
-  chains: [mantleMainnet, mantleSepolia],
+  // Sepolia first = the default chain reads + wallet connect target, since the
+  // contracts are live on Mantle Sepolia (5003).
+  chains: [mantleSepolia, mantleMainnet],
   ssr: true,
 });

@@ -135,7 +135,7 @@ export default function Home() {
           {isLive && ROUND_STATE_MAINNET ? (
             <a
               className="button-primary"
-              href={`https://mantlescan.xyz/address/${ROUND_STATE_MAINNET}`}
+              href={`https://sepolia.mantlescan.xyz/address/${ROUND_STATE_MAINNET}`}
               target="_blank"
               rel="noopener noreferrer"
             >

@@ -101,7 +101,7 @@ export function VerifyPanel() {
         {live ? (
           <a
             className="text-xs text-accent underline"
-            href={`https://mantlescan.xyz/address/${REASONING_HASH_ANCHOR_MAINNET}`}
+            href={`https://sepolia.mantlescan.xyz/address/${REASONING_HASH_ANCHOR_MAINNET}`}
             target="_blank"
             rel="noopener noreferrer"
           >
