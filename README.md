@@ -16,14 +16,14 @@ Four agents each run a distinct reasoning frame (Chronos / Devil's Advocate / We
 | **On-chain attestation** | Reasoning-chain hash committed to Mantle (verifiable receipts) | `ReasoningHashAnchor` contract |
 
 ## Status
-🚧 Day 4 of 21 (deadline 2026-06-15 10:59 UTC). Not yet deployed on-chain — testnet (Day 7) / mainnet (Day 14) ahead. Run locally today in demo mode.
+🟢 **Live on Mantle Sepolia** (chain 5003) — all 5 Glass-Box contracts deployed and wired into the frontend (addresses in `frontend/lib/contracts.ts`). The keynote tamper-test reads the real on-chain reasoning commit. Mainnet settlement deploy is post-hackathon. Data layer is real-API-ready (DeepSeek live; Nansen/Elfa wired with deterministic mock fallback when a key/endpoint is unavailable).
 
 ## What's in the box
-- `contracts/` — Foundry workspace. `IGlassBoxAgent`, `ReasoningHashAnchor`, `GlassBoxRegistry`, `RoundState`, `AgentExecutor`, `MerchantMoeAdapter`, `ReasoningRepToken`, `HumanArena` (the AI-vs-human play layer). 49/49 Solidity tests passing (`forge test`).
-- `agents/` — Python multi-agent backend. 4 specialists + Fold ensemble (confidence-weighted consensus) + orchestrator + backtest harness. DeepSeek (deepseek-reasoner) backend with native chain-of-thought streaming. 40/40 Python tests passing (`pytest`).
+- `contracts/` — Foundry workspace. `IGlassBoxAgent`, `ReasoningHashAnchor`, `GlassBoxRegistry`, `RoundState`, `AgentExecutor`, `MerchantMoeAdapter`, `ReasoningRepToken`, `HumanArena` (the AI-vs-human play layer). 59/59 Solidity tests passing (`forge test`).
+- `agents/` — Python multi-agent backend. 4 specialists + Fold ensemble (confidence-weighted consensus) + orchestrator + backtest harness. DeepSeek (deepseek-reasoner) backend with native chain-of-thought streaming. 45/45 Python tests passing (`pytest` from repo root).
 - `frontend/` — Next.js 14 + RainbowKit + Tailwind. Live reasoning-chain stream, leaderboard, PnL chart, wallet connect.
 - `broadcast/` — OBS-streaming-ready scene layouts for the July 2-3 AI Awakening livestream.
-- `kit/` — `glassbox-agent-kit` — reusable SDK extracted Day 15-16 (DevTools 2nd BUIDL).
+- `kit/` — `glassbox-agent-kit` — reusable TypeScript SDK (2nd BUIDL): the reasoning-receipt primitive, a transparent `GlassBoxAgent` base + Fold, on-chain commit/verify helpers, and ERC-8004 shapes. Byte-parity with the Python agent / Solidity contract / browser is pinned by a golden-vector test (`cd kit && npm test`).
 - `docs/` — Integration schema spec + Mantle DevRel outreach drafts.
 
 ## Build plan
@@ -45,7 +45,7 @@ cd ../frontend && pnpm install && pnpm dev
 - **AI vs Human, for real** — `HumanArena` lets anyone submit a directional call (no capital) and be graded by the *same* on-chain rule as the agents. The "AI vs Human" premise is a mechanic, not a label.
 - **4 distinct reasoning frames**, not 4 copies of the same prompt. Multi-agent ensemble with named roles, not a single LLM dressed up.
 - **Live chain-of-thought** visible per agent (deepseek-reasoner's `reasoning_content` channel maps directly to a visible thinking stream).
-- **Reasoning chains hashed on Mantle** — once deployed (testnet Day 7 / mainnet Day 14), every decision carries a verifiable on-chain receipt anyone can audit.
+- **Reasoning chains hashed on Mantle** — live on Sepolia today: every decision carries a verifiable on-chain receipt anyone can recompute and audit (`ReasoningHashAnchor` at `0xB031…353d`).
 - **ERC-8004 reputation graded by realized on-chain PnL** — the design; the PnL→reputation settlement goes live with the Day-14 mainnet deploy.
 - **`glassbox-agent-kit` open-source SDK** (2nd BUIDL) lets any developer ship a transparent agent on Mantle.
 

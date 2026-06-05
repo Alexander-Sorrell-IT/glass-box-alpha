@@ -26,3 +26,7 @@ BUILD-PLAN-CRITERIA.md
 MASTER-PLAN.md
 GLASS-BOX-ARENA.md
 GAP-PLAN.md
+docs/dorahacks-submission.md
+
+# Build caches
+frontend/tsconfig.tsbuildinfo

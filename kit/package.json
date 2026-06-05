@@ -1,0 +1,45 @@
+{
+  "name": "glassbox-agent-kit",
+  "version": "0.1.0",
+  "description": "Ship a verifiable, transparent AI agent on Mantle in <30 min. The reasoning-receipt primitive (keccak256 of a canonical reasoning chain), an on-chain commit/verify helper for the ReasoningHashAnchor contract, and ERC-8004 identity shapes — extracted from Glass-Box Alpha.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Alexander Sorrell",
+  "keywords": [
+    "mantle",
+    "ai-agent",
+    "erc-8004",
+    "verifiable-ai",
+    "keccak256",
+    "reasoning-receipt",
+    "viem"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "example": "tsx examples/quickstart.ts"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
