@@ -39,7 +39,7 @@ export function AgentCard({ agentKey, signal, confidence, reasoningPreview, pnlB
       </div>
 
       {reasoningPreview && (
-        <p className="text-xs text-signal-neutral/80 line-clamp-3 font-mono leading-relaxed">
+        <p className="text-xs text-signal-neutral line-clamp-3 font-mono leading-relaxed">
           {reasoningPreview}
         </p>
       )}

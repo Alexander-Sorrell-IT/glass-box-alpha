@@ -23,7 +23,7 @@ export function LiveStatus() {
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2 badge bg-signal-bull/15 text-signal-bull">
         <span className="w-2 h-2 rounded-full bg-signal-bull animate-pulse" />
-        LIVE on Mantle
+        LIVE on Mantle Sepolia
       </div>
       {roundsCount !== undefined && (
         <span className="text-xs text-signal-neutral font-mono">{roundsCount} rounds</span>

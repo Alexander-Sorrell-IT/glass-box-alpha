@@ -27,7 +27,7 @@ export function ReasoningStream({ steps, maxRows = 12 }: ReasoningStreamProps) {
       </div>
       <div className="space-y-2 font-mono text-xs">
         {visible.length === 0 ? (
-          <p className="text-signal-neutral/50 italic">Waiting for first signal…</p>
+          <p className="text-signal-neutral italic">Waiting for first signal…</p>
         ) : (
           visible.map((s, i) => (
             <div key={`${s.agent}-${s.step}-${i}`} className="flex gap-2 animate-reasoning-fade">

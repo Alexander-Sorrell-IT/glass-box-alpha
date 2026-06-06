@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from abc import ABC, abstractmethod
 from typing import AsyncIterator
@@ -65,7 +66,14 @@ class GlassBoxAgent(ABC):
                     prompt_tokens = in_tok
                     completion_tokens = out_tok
 
-        decision = self._parse_decision(market_id, final_text or (steps[-1].thought if steps else ""))
+        # Prefer the DECISION line in the final answer (content); fall back to the tail of the
+        # reasoning if the model only stated it there. Either way, default to a neutral HOLD.
+        reasoning_text = "\n".join(s.thought for s in steps)
+        decision = (
+            self._parse_decision(market_id, final_text)
+            or self._parse_decision(market_id, reasoning_text)
+            or self._default_decision(market_id)
+        )
 
         chain = ReasoningChain(
             agent_id=self.agent_id,
@@ -105,9 +113,13 @@ class GlassBoxAgent(ABC):
         return (
             f"Market: {market_id}\n"
             f"Context: {json.dumps(context, indent=2, default=str)}\n\n"
-            "Reason step-by-step. End with a single line:\n"
-            "DECISION: <SPOT_SWAP|LP_DEPOSIT|LP_WITHDRAW|PERP_LONG|PERP_SHORT|HOLD|HEDGE> "
-            "signal=<-1..1> size_bps=<0..10000> confidence=<0..1>"
+            "Reason step-by-step. Then the VERY LAST line of your answer must be exactly one "
+            "DECISION line with your own concrete numbers — no angle brackets, no extra words "
+            "after it. Format (this is an EXAMPLE; substitute your real values):\n"
+            "DECISION: PERP_LONG signal=0.42 size_bps=2500 confidence=0.70\n"
+            "Valid actions: SPOT_SWAP, LP_DEPOSIT, LP_WITHDRAW, PERP_LONG, PERP_SHORT, HOLD, HEDGE. "
+            "signal in -1..1, size_bps in 0..10000, confidence in 0..1. "
+            "For HOLD/HEDGE use size_bps=0 but still give a real confidence."
         )
 
     async def _stream_reasoning(self, user_prompt: str) -> AsyncIterator[dict]:
@@ -127,7 +139,7 @@ class GlassBoxAgent(ABC):
                 {"role": "user", "content": user_prompt},
             ],
             stream=True,
-            max_tokens=2048,
+            max_tokens=8192,  # reasoner burns thousands on CoT — too small and it truncates before the DECISION line
             stream_options={"include_usage": True},
         )
 
@@ -185,36 +197,58 @@ class GlassBoxAgent(ABC):
                 }
             yield {"kind": "final", "data": content_buffer.strip()}
 
-    def _parse_decision(self, market_id: str, final_thought: str) -> Decision:
-        line = next(
-            (ln for ln in final_thought.splitlines() if ln.strip().startswith("DECISION:")),
-            None,
-        )
-        if line is None:
-            return Decision(
-                agent_id=self.agent_id,
-                decision_index=self._decision_index,
-                timestamp=int(time.time()),
-                kind=DecisionType.HOLD,
-                market_id=market_id,
-                directional_signal=0.0,
-                size_bps=0,
-                confidence=0.0,
-            )
-
-        parts = line.replace("DECISION:", "").strip().split()
-        kind = DecisionType[parts[0]]
-        signal = float(next(p for p in parts if p.startswith("signal=")).split("=")[1])
-        size = int(next(p for p in parts if p.startswith("size_bps=")).split("=")[1])
-        conf = float(next(p for p in parts if p.startswith("confidence=")).split("=")[1])
-
+    def _default_decision(self, market_id: str) -> Decision:
+        """Neutral fallback when no parseable DECISION line was produced."""
         return Decision(
             agent_id=self.agent_id,
             decision_index=self._decision_index,
             timestamp=int(time.time()),
-            kind=kind,
+            kind=DecisionType.HOLD,
             market_id=market_id,
-            directional_signal=signal,
-            size_bps=size,
-            confidence=conf,
+            directional_signal=0.0,
+            size_bps=0,
+            confidence=0.0,
         )
+
+    def _parse_decision(self, market_id: str, text: str) -> Decision | None:
+        """Extract a structured Decision from `text`, or None if none is present.
+
+        Tolerant by design: scans each `DECISION:` marker from last to first (the real
+        answer comes after any prompt-template echo), reads kind + numeric
+        signal/size_bps/confidence in any order, clamps to valid ranges. A marker with a
+        non-numeric `signal` (e.g. the echoed `signal=<-1..1>` template) is skipped, and
+        a marker missing a numeric signal entirely yields None so the caller can fall back.
+        """
+        if not text:
+            return None
+
+        for marker in reversed(list(re.finditer(r"DECISION:\s*([\s\S]{0,200})", text))):
+            window = marker.group(1)
+            sig_m = re.search(r"signal\s*=\s*(-?\d+(?:\.\d+)?)", window)
+            if not sig_m:
+                continue  # template echo or malformed — try an earlier marker
+
+            kind = DecisionType.HOLD
+            for tok in re.findall(r"[A-Z_]{3,}", window):
+                if tok in DecisionType.__members__:
+                    kind = DecisionType[tok]
+                    break
+
+            def _grab(key: str, lo: float, hi: float, default: float) -> float:
+                m = re.search(rf"{key}\s*=\s*(-?\d+(?:\.\d+)?)", window)
+                return min(hi, max(lo, float(m.group(1)))) if m else default
+
+            signal = min(1.0, max(-1.0, float(sig_m.group(1))))
+            size = int(_grab("size_bps", 0.0, 10000.0, 0.0))
+            conf = _grab("confidence", 0.0, 1.0, 0.0)
+            return Decision(
+                agent_id=self.agent_id,
+                decision_index=self._decision_index,
+                timestamp=int(time.time()),
+                kind=kind,
+                market_id=market_id,
+                directional_signal=signal,
+                size_bps=size,
+                confidence=conf,
+            )
+        return None

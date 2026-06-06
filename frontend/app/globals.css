@@ -11,6 +11,27 @@
   * {
     border-color: theme('colors.border');
   }
+
+  /* Visible keyboard focus ring for every interactive control — buttons, links,
+     inputs, and the Ring's focusable <g> ribbons. accentHover (#9173ff) carries
+     enough luminance against the #0a0a0f / #13131a surfaces to read clearly. */
+  :focus-visible {
+    outline: 2px solid theme('colors.accentHover');
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Honor prefers-reduced-motion globally: neutralizes the Tailwind
+     reveal-pop / reasoning-fade animations, the live pulse dot, and smooth
+     scrolling for users who opt out of motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer components {

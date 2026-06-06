@@ -22,7 +22,7 @@ export function Leaderboard({ rows }: LeaderboardProps) {
         AI vs Human Leaderboard
       </h2>
       <div className="space-y-1">
-        <div className="grid grid-cols-12 gap-2 text-xs text-signal-neutral/60 px-2 pb-1 border-b border-border">
+        <div className="grid grid-cols-12 gap-2 text-xs text-signal-neutral px-2 pb-1 border-b border-border">
           <span className="col-span-1">#</span>
           <span className="col-span-5">Trader</span>
           <span className="col-span-2 text-right">Trades</span>
@@ -30,7 +30,7 @@ export function Leaderboard({ rows }: LeaderboardProps) {
           <span className="col-span-2 text-right">PnL</span>
         </div>
         {rows.length === 0 ? (
-          <p className="text-signal-neutral/50 italic text-xs px-2 py-3">
+          <p className="text-signal-neutral italic text-xs px-2 py-3">
             No trades settled yet.
           </p>
         ) : (

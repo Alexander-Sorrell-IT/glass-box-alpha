@@ -142,7 +142,8 @@ function ResultView({ result, onReset }: { result: ArenaResult; onReset: () => v
         }`}
       >
         <div className={`text-lg font-bold ${result.beat ? "text-signal-bull" : "text-signal-bear"}`}>
-          {result.beat ? `🏆 You beat ${result.agentName}!` : `🤖 ${result.agentName} beat you`}
+          <span aria-hidden="true">{result.beat ? "🏆 " : "🤖 "}</span>
+          {result.beat ? `You beat ${result.agentName}!` : `${result.agentName} beat you`}
         </div>
         <div className="flex items-center justify-center gap-6 mt-3 font-mono">
           <div>
@@ -176,8 +177,8 @@ function ResultView({ result, onReset }: { result: ArenaResult; onReset: () => v
       />
 
       <div className="grid grid-cols-2 gap-3">
-        <button onClick={share} className="button-primary py-3">
-          Share on X 𝕏
+        <button onClick={share} aria-label="Share result on X" className="button-primary py-3">
+          Share on X <span aria-hidden="true">𝕏</span>
         </button>
         <button
           onClick={onReset}

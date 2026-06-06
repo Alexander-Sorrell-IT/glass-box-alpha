@@ -5,23 +5,13 @@ import { useReadContract } from "wagmi";
 import { canonicalReceipt, hashCanonical, receiptHash, type ReasoningChain } from "@/lib/receipt";
 import { REASONING_HASH_ANCHOR_MAINNET } from "@/lib/contracts";
 import { reasoningAnchorAbi } from "@/lib/abis";
+import { HERO_CHRONOS_CHAIN } from "@/lib/heroRound";
 
-// A real Chronos reasoning chain (demo). Its keccak256 is the "on-chain commit" the
-// panel checks against — identical to what agents/shared/base.py would commit.
-const DEMO_CHAIN: ReasoningChain = {
-  agent_id: 1,
-  decision_index: 17,
-  model: "deepseek-reasoner",
-  prompt_tokens: 1840,
-  completion_tokens: 920,
-  steps: [
-    { step: 1, thought: "Pulled 30d Nansen smart-money flows on mETH/USDC: net inflow +$1.2M across 7 wallets with 30d win-rate > 0.65." },
-    { step: 2, thought: "Mined 4 historical analogs where the inflow/TVL ratio matched; 3 of 4 resolved +3-5% within 48h." },
-    { step: 3, thought: "Convergence 3/4 -> bullish. DECISION: PERP_LONG signal=0.62 size_bps=2500 confidence=0.74" },
-  ],
-  data_sources: ["nansen"],
-  timestamp: 1717200000, // committed BEFORE the market moved
-};
+// The REAL captured Chronos round (bearish PERP_SHORT) — the SAME round the Ring renders.
+// Its keccak256 (0xfedc499e...) is committed on-chain at getCommit(agentId=1, decisionIndex=0)
+// (tx 0xaa64a6c6, Mantle Sepolia), so this tamper test verifies a genuine on-chain commit of
+// the exact round shown above — not a separate demo chain.
+const DEMO_CHAIN: ReasoningChain = HERO_CHRONOS_CHAIN;
 
 const COMMITTED_HASH = receiptHash(DEMO_CHAIN); // = the on-chain commit, computed from the pristine receipt
 const PRISTINE = canonicalReceipt(DEMO_CHAIN);
@@ -44,7 +34,7 @@ export function VerifyPanel() {
 
   const live = REASONING_HASH_ANCHOR_MAINNET.length === 42;
 
-  // Read the REAL on-chain commit for (Chronos agentId=1, decisionIndex=17) from
+  // Read the REAL on-chain commit for (Chronos agentId=1, decisionIndex=0) from
   // Mantle Sepolia. The tamper test then checks the recompute against the literal
   // value stored on-chain — not a client-side constant.
   const { data: onChainCommit } = useReadContract({
@@ -76,15 +66,15 @@ export function VerifyPanel() {
         </span>
       </div>
       <p className="text-xs text-signal-neutral mb-3">
-        Chronos committed this reasoning&apos;s keccak256 to Mantle <strong>before</strong> the market moved.
-        Edit a single character below and watch the hash turn red — the AI physically can&apos;t change why it
-        decided after the fact.
+        Chronos&apos;s full reasoning, hashed (keccak256) and <strong>committed on-chain</strong> to Mantle.
+        Edit a single character below and watch the hash turn red — once committed, the AI physically
+        can&apos;t change why it decided.
       </p>
 
-      {/* The before/after timestamp contrast — the headline fact */}
+      {/* Immutability + tamper-evidence — the headline fact (no settlement is claimed) */}
       <div className="flex gap-6 text-[11px] font-mono text-signal-neutral mb-3">
-        <span>🔒 reasoning committed: <span className="text-signal-bull">T0</span></span>
-        <span>📉 market settled: <span className="text-signal-neutral">T0 + 24h</span></span>
+        <span>🔒 committed on-chain: <span className="text-signal-bull">immutable</span></span>
+        <span>🔁 recompute below: <span className="text-signal-neutral">tamper-evident</span></span>
       </div>
 
       {/* The editable canonical receipt — re-hashes on every keystroke */}
@@ -93,7 +83,7 @@ export function VerifyPanel() {
         onChange={(e) => setText(e.target.value)}
         spellCheck={false}
         aria-label="Editable reasoning receipt — edit to tamper"
-        className={`w-full h-36 rounded-lg bg-bg/60 border p-3 font-mono text-[11px] leading-relaxed resize-none focus:outline-none ${
+        className={`w-full h-36 rounded-lg bg-bg/60 border p-3 font-mono text-[11px] leading-relaxed resize-none ${
           matches ? "border-border" : "border-signal-bear text-signal-bear"
         }`}
       />
