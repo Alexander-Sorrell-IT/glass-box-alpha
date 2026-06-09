@@ -32,3 +32,4 @@ docs/dorahacks-submission.md
 # Build caches
 frontend/tsconfig.tsbuildinfo
 .vercel
+flash_vs_pro_divergence.py

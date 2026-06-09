@@ -78,6 +78,7 @@ export function ogParams(r: ArenaResult): URLSearchParams {
     vs: r.agentName,
     beat: r.beat ? "1" : "0",
     dir: r.direction > 0 ? "bull" : "bear",
+    sim: "1", // demo round -> the OG card stamps a SIMULATED watermark (honesty)
   });
 }
 
@@ -86,7 +87,7 @@ export function tweetText(r: ArenaResult): string {
   const dir = r.direction > 0 ? "🟢 bull" : "🔴 bear";
   if (r.beat) {
     return `I went ${dir} on ${DEMO_ROUND.market} and BEAT ${r.agentName} on @GlassBoxAlpha 🧠⚔️🤖\n` +
-      `Me ${fmtBps(r.human)}bps vs ${r.agentName} ${fmtBps(r.agent)}bps — every call graded on-chain by real PnL.\n` +
+      `Me ${fmtBps(r.human)}bps vs ${r.agentName} ${fmtBps(r.agent)}bps — scored under the same rule the agents face (simulated round).\n` +
       `Think you can out-reason the AI? #MantleAIHackathon`;
   }
   return `I went ${dir} on ${DEMO_ROUND.market} and ${r.agentName} beat me on @GlassBoxAlpha 🤖⚔️🧠\n` +

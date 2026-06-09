@@ -4,7 +4,7 @@ Maps the 4 Glass-Box Alpha agents to distinct reasoning frames. Each prompt
 instructs the agent to reason through its specific frame as the actual
 decision-method — not decorative.
 
-LLM backend: DeepSeek via OpenAI-compatible API. With deepseek-reasoner, the
+LLM backend: DeepSeek via OpenAI-compatible API. With deepseek-v4-pro, the
 reasoning_content channel streams step-by-step thinking natively — each
 chunk maps cleanly to a visible reasoning step.
 """

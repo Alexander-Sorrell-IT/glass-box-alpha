@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useIsLive } from "@/lib/useGlassBox";
 import {
   type Direction,
   type ArenaResult,
@@ -20,7 +19,6 @@ import {
 /// contracts deploy, `submitCall` becomes the one on-chain write; the win/lose
 /// read stays a gasless view.
 export function HumanCall() {
-  const { isLive } = useIsLive();
   const [direction, setDirection] = useState<Direction>(1);
   const [convictionBps, setConvictionBps] = useState(6000);
   const [result, setResult] = useState<ArenaResult | null>(null);
@@ -42,13 +40,13 @@ export function HumanCall() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">
           You vs the AI — make your call
         </h2>
-        {!isLive && (
-          <span className="badge bg-border text-signal-neutral text-[10px]">SIMULATED ROUND</span>
-        )}
+        {/* The result always resolves against the demo round, so the disclosure is
+            ALWAYS shown — never gated on isLive (which would hide it in production). */}
+        <span className="badge bg-border text-signal-neutral text-[10px]">SIMULATED ROUND</span>
       </div>
       <p className="text-xs text-signal-neutral mb-3">
         Round #{DEMO_ROUND.roundId} · {DEMO_ROUND.market} · no capital needed — you predict, you&apos;re
-        graded on-chain by the same rule as the agents.
+        scored by the same rule the agents face. Simulated round (no settled on-chain round yet).
       </p>
 
       {!result && (
@@ -161,7 +159,7 @@ function ResultView({ result, onReset }: { result: ArenaResult; onReset: () => v
           </div>
         </div>
         <div className="text-[11px] text-signal-neutral mt-3">
-          Market realized {fmtBps(result.realizedPnlBps)} bps · both graded by the same on-chain rule
+          Market realized {fmtBps(result.realizedPnlBps)} bps · both scored by the same rule · simulated round
         </div>
       </div>
 

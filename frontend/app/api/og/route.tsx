@@ -33,6 +33,7 @@ export async function GET(request: Request) {
   const confidence = parseFloat(searchParams.get("confidence") ?? "0");
   const pnl = searchParams.get("pnl") ? parseFloat(searchParams.get("pnl")!) : null;
   const round = searchParams.get("round") ?? "—";
+  const simulated = searchParams.get("sim") === "1"; // demo round -> stamp it, don't imply on-chain truth
 
   // Optional human-vs-agent result overlay (the "AI vs Human" share card).
   const humanScore = searchParams.get("human");
@@ -67,21 +68,22 @@ export async function GET(request: Request) {
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: 44, fontWeight: 700, color: COLORS.text }}>Glass-Box Alpha</span>
             <span style={{ fontSize: 24, color: COLORS.neutral, marginTop: 6 }}>
-              Round #{round} · {market} · AI reasoning attested on Mantle
+              Round #{round} · {market} ·{" "}
+              {simulated ? "SIMULATED demo — not a settled on-chain round" : "AI reasoning attested on Mantle"}
             </span>
           </div>
           <div
             style={{
               display: "flex",
               padding: "10px 20px",
-              backgroundColor: COLORS.accent,
+              backgroundColor: simulated ? COLORS.bear : COLORS.accent,
               borderRadius: 12,
               fontSize: 24,
               color: "white",
-              fontWeight: 600,
+              fontWeight: 700,
             }}
           >
-            Mantle Turing Test
+            {simulated ? "⚠ SIMULATED" : "Mantle Turing Test"}
           </div>
         </div>
 

@@ -13,7 +13,7 @@
 
 > Hey Mantle builders 👋
 >
-> Shipping Glass-Box Alpha for the Turing Test Hackathon — 4 AI trading agents, each running a different reasoning frame. Real Mantle DeFi calls, full chain-of-thought visible (deepseek-reasoner streams thinking natively), reasoning chains hashed on Mantle via ERC-8004 reputation graded by actual PnL.
+> Shipping Glass-Box Alpha for the Turing Test Hackathon — 4 AI trading agents, each running a different reasoning frame. Real Mantle DeFi calls, full chain-of-thought visible (deepseek-v4-pro streams thinking natively), reasoning chains hashed on Mantle via ERC-8004 reputation graded by actual PnL.
 >
 > Agent frames:
 > - Chronos → timeline / historical analog mining (possibility trees through time)
@@ -38,7 +38,7 @@
 
 ## DM to Mantle DevRel (Day 2 — personalized)
 
-> Hey [name], building Glass-Box Alpha for the Turing Test hackathon — 4 AI agents trading real Mantle DeFi with visible chain-of-thought (via deepseek-reasoner's native thinking stream). Each agent runs a different reasoning frame; ensemble decision via the Fold (confidence-weighted consensus across the 4 frames). ERC-8004 reputation graded by realized on-chain PnL.
+> Hey [name], building Glass-Box Alpha for the Turing Test hackathon — 4 AI agents trading real Mantle DeFi with visible chain-of-thought (via deepseek-v4-pro's native thinking stream). Each agent runs a different reasoning frame; ensemble decision via the Fold (confidence-weighted consensus across the 4 frames). ERC-8004 reputation graded by realized on-chain PnL.
 >
 > Concrete ask: I'm scoping a broadcast view explicitly designed for the July 2-3 AI Awakening livestream — OBS-streaming layout, plug-and-play integration schema any hackathon team's agent can implement to appear on the leaderboard alongside ours.
 >

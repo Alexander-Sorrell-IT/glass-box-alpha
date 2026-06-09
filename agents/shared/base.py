@@ -4,7 +4,7 @@ Adapted from the ECHO 4-agent orchestrator. ~25-30% of ECHO code carries over
 (this base + streaming + orchestrator).
 
 LLM backend: DeepSeek via OpenAI-compatible API. Default model is
-`deepseek-reasoner` (R1) which streams reasoning_content separately from
+`deepseek-v4-pro` (R1) which streams reasoning_content separately from
 content — Glass-Box transparency comes for free.
 """
 from __future__ import annotations
@@ -34,7 +34,7 @@ class GlassBoxAgent(ABC):
     def __init__(self, client: AsyncOpenAI, agent_id: int, model: str | None = None) -> None:
         self.client = client
         self.agent_id = agent_id
-        self.model = model or os.environ.get("DEEPSEEK_MODEL", "deepseek-reasoner")
+        self.model = model or os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro")
         self._decision_index = 0
 
     def system_prompt(self) -> str:
@@ -125,11 +125,11 @@ class GlassBoxAgent(ABC):
     async def _stream_reasoning(self, user_prompt: str) -> AsyncIterator[dict]:
         """Stream DeepSeek response.
 
-        For deepseek-reasoner, `delta.reasoning_content` carries the CoT and
+        For deepseek-v4-pro, `delta.reasoning_content` carries the CoT and
         `delta.content` carries the final answer (visible to user). We emit
         reasoning steps from reasoning_content and the final text from content.
 
-        For deepseek-chat (or non-reasoner models), reasoning_content is None
+        For deepseek-v4-flash (or non-reasoner models), reasoning_content is None
         so we synthesize steps by splitting `content` on paragraph breaks.
         """
         stream = await self.client.chat.completions.create(

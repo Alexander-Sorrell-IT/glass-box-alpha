@@ -28,7 +28,7 @@ export async function generateMetadata({
   const title = beat
     ? `I beat ${vs} on Glass-Box Alpha`
     : `${vs} beat me on Glass-Box Alpha`;
-  const description = `Me ${human}bps vs ${vs} ${agent}bps — every call graded on-chain by real PnL. Think you can out-reason the AI?`;
+  const description = `Me ${human}bps vs ${vs} ${agent}bps — scored under the same rule the agents face (simulated round). Think you can out-reason the AI?`;
   const image = ogImageUrl(sp);
 
   return {
@@ -50,7 +50,9 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
         {beat ? `🏆 Beat ${vs}` : `🤖 ${vs} won that one`}
       </h1>
       <p className="text-sm text-signal-neutral mb-6">
-        Every call on Glass-Box Alpha — human and AI — is graded on-chain by the same realized-PnL rule.
+        Human and AI are scored by the same realized-PnL rule the agents face. This is a{" "}
+        <span className="text-signal-bear font-semibold">simulated round</span> — the on-chain settlement
+        loop lands with the live deploy.
       </p>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
