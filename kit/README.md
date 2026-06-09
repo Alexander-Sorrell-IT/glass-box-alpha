@@ -22,7 +22,9 @@ class MyAgent extends GlassBoxAgent {
     // wire any LLM (DeepSeek, Claude, local) or deterministic logic here
     return {
       model: "my-model-v1",
-      data_sources: ["nansen"],
+      // Tag each source's liveness: "<source>:<live|mock|unavailable>[@<ref>]".
+      // It rides inside the hashed receipt, so the receipt can't claim mock data was live.
+      data_sources: ["nansen:live"],
       steps: [
         { step: 1, thought: "net smart-money inflow is positive" },
         { step: 2, thought: "lean long" },
@@ -83,6 +85,34 @@ const { ok } = await verifyReasoning({
 `commitReasoning` / `verifyReasoning` default to the live `ReasoningHashAnchor` on
 Mantle Sepolia (`0xB031…353d`); pass `anchor` to point at your own deployment.
 
+## Check *and* beat — the kit is the whole integration surface
+
+A third-party agent needs nothing but this package to produce a receipt anyone can
+**check** (recompute the hash + read its provenance) and **beat** (score it against the
+same rule the on-chain arena enforces). `examples/foreign-agent.ts` is exactly that — a
+`funding-skew` agent that imports only `glassbox-agent-kit`:
+
+```bash
+npm run example:foreign   # fully offline; commit step gated on PRIVATE_KEY
+```
+
+```ts
+import { parseProvenance, isFullyLive, scoreDecision, arenaScore, beats } from "glassbox-agent-kit";
+
+// 1) CHECK: liveness is committed inside the receipt — a mock source can't hide.
+parseProvenance(chain);   // [{source:"funding-oracle",mode:"live",ref:"block=19000123"}, {source:"dex-mid",mode:"mock"}]
+isFullyLive(chain);       // false
+
+// 2) BEAT: grade the agent and a human call under one rule (mirror of HumanArena.score()).
+const agent    = scoreDecision(decision, realizedPnlBps);  // agent's score
+const yourCall = arenaScore(-1, 9000, realizedPnlBps);     // your bearish call, 90% conviction
+beats(yourCall, agent);   // did you beat the AI? — same math the contract runs
+```
+
+`arenaScore` is pinned byte-for-byte to `HumanArena.score()` by vectors shared with the
+contract's test suite, including the negative-remainder case where a naive `Math.floor`
+would diverge from Solidity's truncate-toward-zero.
+
 ## API
 
 | Export | What it does |
@@ -92,6 +122,11 @@ Mantle Sepolia (`0xB031…353d`); pass `anchor` to point at your own deployment.
 | `hashCanonical(str)` | Hash already-serialized bytes (powers a live tamper box). |
 | `GlassBoxAgent` | Abstract base — implement `reason()`, get a reproducible chain + receipt. |
 | `foldEnsemble(decisions)` | Confidence-weighted consensus of several agents' calls. |
+| `parseProvenance(chain)` | Read each `data_sources` entry as `{source, mode, ref}` (mode: live/mock/unavailable/internal/unknown). |
+| `isFullyLive(chain)` | True only if every source is confirmably live — a receipt can't claim mock data was real. |
+| `arenaScore(direction, weightBps, pnlBps)` | The shared win/lose rule, mirror of on-chain `HumanArena.score()`. |
+| `scoreDecision(decision, pnlBps)` | Grade an agent `Decision` under that same rule. |
+| `beats(human, agent)` | Strict head-to-head (a tie is not a win). |
 | `commitReasoning(...)` | Seal a chain's hash on-chain (viem `WalletClient`). |
 | `verifyReasoning(...)` | Re-hash a published chain against its commit (the tamper test). |
 | `ERC8004_REGISTRIES` | Canonical ERC-8004 Identity/Reputation addresses on Mantle. |

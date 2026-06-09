@@ -159,6 +159,32 @@ class SettlerService:
             agent_records=payload["agents"],
         )
 
+    def settle_round(self, outcome: RoundOutcome, price_at_commit: float,
+                     price_at_settle: float) -> list[dict[str, Any]]:
+        """Settlement phase (the docstring's step 7): grade each agent's ALREADY-COMMITTED
+        signal against an independently-read outcome, closing the gap-#1 loop end-to-end.
+
+        ``price_at_commit``/``price_at_settle`` are reads from a source the agents cannot move
+        (oracle/DEX at the commit and settle blocks). Each score reads the agent's committed
+        ``directional_signal`` straight off the round record — it never re-derives it — so the
+        grade is bound to an independent future, not circular. Paper prices today; the SAME
+        call grades realized on-chain PnL once the price reads are wired to a live feed and
+        on-chain settlement at the mainnet deploy. (Not auto-invoked in dry-run — there is no
+        live price feed to trigger it; the round flow calls this once the settlement window
+        closes.)
+        """
+        realized_bps = self.resolve_outcome(price_at_commit, price_at_settle)
+        return [
+            {
+                "agent_id": agent["agent_id"],
+                "name": agent.get("name"),
+                "committed_signal": agent["decision"]["directional_signal"],
+                "realized_move_bps": realized_bps,
+                "score": self.score_prediction(agent["decision"]["directional_signal"], realized_bps),
+            }
+            for agent in outcome.agent_records
+        ]
+
     # ---------- On-chain shims (dry-run safe) ----------
 
     def _open_round(self, market_id: str) -> int:
@@ -217,6 +243,34 @@ class SettlerService:
         except Exception as exc:
             logger.warning(f"[settler] trade execution failed: {exc}")
             return False
+
+    # ---------- Independent resolution + recomputable scoring (gap-#1 loop) ----------
+    #
+    # A committed reasoning hash only *forces* honesty if the prediction is graded
+    # against a future the agent could not influence, by a rule anyone can recompute.
+    # These two pure functions close that loop in paper form: the prediction is read
+    # from the ALREADY-COMMITTED receipt; the outcome is read from an independent price
+    # source at a later block; the score is a deterministic function of the two. Swapping
+    # paper PnL for real on-chain PnL at the mainnet deploy changes nothing here — the
+    # honesty was never a function of the money.
+
+    @staticmethod
+    def resolve_outcome(price_at_commit: float, price_at_settle: float) -> int:
+        """Realized directional move in bps between commit and settlement. Both prices
+        come from a source the agent cannot move (oracle/DEX read at the two blocks), so
+        the outcome is independent. Pure + recomputable: same two public prices → same bps."""
+        if price_at_commit <= 0:
+            return 0
+        return round((price_at_settle - price_at_commit) / price_at_commit * 10_000)
+
+    @staticmethod
+    def score_prediction(committed_signal: float, realized_move_bps: int) -> int:
+        """Grade an ALREADY-COMMITTED directional signal against the independently-read
+        outcome. Reads the signal from the committed receipt — never re-derives it — so the
+        claim is bound to an independent future, not circular. Positive iff the committed
+        direction matched the realized move; magnitude scales with conviction × move."""
+        direction = 1 if committed_signal >= 0 else -1
+        return int(direction * realized_move_bps * abs(committed_signal))
 
     @staticmethod
     def _market_hash(market_id: str) -> bytes:

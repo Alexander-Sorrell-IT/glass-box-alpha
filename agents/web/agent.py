@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..shared.base import GlassBoxAgent
-from ..shared.tools import nansen_smart_money_flows
+from ..shared.tools import collect_provenance, nansen_smart_money_flows
 
 
 _CORRELATED_ASSETS = {
@@ -36,4 +36,5 @@ class Web(GlassBoxAgent):
             "related_asset_flows": related_flows,
             "candidate_linkages": related,
             "note": "Find cross-asset wallet cohorts: when one moves, which others follow within 4h?",
+            "_provenance": collect_provenance(base_flows, *(r["flows"] for r in related_flows)),
         }

@@ -29,7 +29,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "example": "tsx examples/quickstart.ts"
+    "example": "tsx examples/quickstart.ts",
+    "example:foreign": "tsx examples/foreign-agent.ts"
   },
   "dependencies": {
     "viem": "^2.21.0"

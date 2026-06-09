@@ -35,6 +35,37 @@ GOLDEN_CANONICAL = (
 )
 GOLDEN_KECCAK = "0xf8aed1ad2a6bcdf567b73fb7fe2814f93d83f7ee1ffdea7d6e70eb663f55b82a"
 
+# Second golden vector — PRODUCTION provenance format ("source:mode[@ref]") in data_sources,
+# the shape real agents now emit (the first vector uses a legacy bare entry). Pins byte-parity
+# for that format across Python / Solidity / browser / kit. Values frozen from this impl.
+GOLDEN_CHAIN_V2 = ReasoningChain(
+    agent_id=1,
+    decision_index=0,
+    model="deepseek-reasoner",
+    prompt_tokens=100,
+    completion_tokens=200,
+    steps=[ReasoningStep(step=1, thought="net inflow +$1.2M"), ReasoningStep(step=2, thought="bullish")],
+    data_sources=["mantle-rpc:live@block=12345", "nansen:mock"],
+    timestamp=1700000000,
+)
+GOLDEN_CANONICAL_V2 = (
+    '{"agent_id":1,"completion_tokens":200,'
+    '"data_sources":["mantle-rpc:live@block=12345","nansen:mock"],"decision_index":0,'
+    '"model":"deepseek-reasoner","prompt_tokens":100,'
+    '"steps":[{"step":1,"thought":"net inflow +$1.2M"},{"step":2,"thought":"bullish"}],'
+    '"timestamp":1700000000}'
+)
+GOLDEN_KECCAK_V2 = "0xdad4f919a0eb10033dde1cc748cc45f72cd1f7b77e8062d599108aeef6cee33e"
+
+
+def test_provenance_format_canonical_is_frozen():
+    """The production source:mode[@ref] provenance format serializes byte-identically."""
+    assert GlassBoxAgent.canonical_receipt(GOLDEN_CHAIN_V2).decode("utf-8") == GOLDEN_CANONICAL_V2
+
+
+def test_provenance_format_keccak_golden():
+    assert "0x" + GlassBoxAgent.reasoning_hash(GOLDEN_CHAIN_V2).hex() == GOLDEN_KECCAK_V2
+
 
 def test_canonical_receipt_is_frozen():
     """The exact bytes the frontend must reproduce verbatim."""

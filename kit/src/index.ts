@@ -6,9 +6,13 @@
 export {
   type ReasoningChain,
   type ReasoningStep,
+  type Provenance,
+  type ProvenanceMode,
   canonicalReceipt,
   receiptHash,
   hashCanonical,
+  parseProvenance,
+  isFullyLive,
 } from "./receipt.js";
 
 export {
@@ -19,6 +23,8 @@ export {
   GlassBoxAgent,
   foldEnsemble,
 } from "./agent.js";
+
+export { arenaScore, scoreDecision, beats } from "./arena.js";
 
 export {
   REASONING_HASH_ANCHOR_SEPOLIA,

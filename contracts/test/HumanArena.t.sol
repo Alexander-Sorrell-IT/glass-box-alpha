@@ -50,6 +50,11 @@ contract HumanArenaTest is Test {
         // realized PnL or break the fair-fight symmetry.
         assertEq(arena.score(1, 20_000, 100), 100);   // clamps to 10_000
         assertEq(arena.score(1, 50_000, 100), 100);
+        // Integer division truncates TOWARD ZERO on a negative remainder — the one place
+        // a floor-based mirror would diverge. -1*100*3333/10000 = -33.33 -> -33, NOT -34.
+        // (Shared verbatim with kit/test/arena.test.ts to pin TS<->Solidity parity.)
+        assertEq(arena.score(-1, 3333, 100), -33);
+        assertEq(arena.score(1, 3333, 100), 33);
     }
 
     function test_ConstructorRejectsNonContract() public {

@@ -48,6 +48,10 @@ class GlassBoxAgent(ABC):
     async def reason(self, market_id: str) -> tuple[Decision, ReasoningChain]:
         """One full decision cycle: gather context → reason → emit decision + reasoning chain."""
         context = await self.gather_context(market_id)
+        # Provenance the agent declared for its inputs (source + live/mock/unavailable).
+        # Pulled out before prompting so it never pollutes the LLM context, then committed
+        # into the receipt's data_sources — making each input's liveness tamper-evident.
+        provenance = context.pop("_provenance", None)
         user_prompt = self._build_prompt(market_id, context)
 
         steps: list[ReasoningStep] = []
@@ -82,7 +86,11 @@ class GlassBoxAgent(ABC):
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             steps=steps,
-            data_sources=list(context.keys()),
+            # Deterministic (sorted + deduped) so the same decision hashes identically
+            # run-to-run regardless of gather order. An agent that declares no provenance
+            # commits ["undeclared:unknown"] — never raw context keys, which would read as
+            # legitimate live sources and let a receipt imply liveness it never declared.
+            data_sources=(sorted(set(provenance)) if provenance else ["undeclared:unknown"]),
             timestamp=int(time.time()),
         )
         self._decision_index += 1

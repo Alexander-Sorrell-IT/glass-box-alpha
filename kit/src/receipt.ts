@@ -63,3 +63,44 @@ export function receiptHash(chain: ReasoningChain): `0x${string}` {
 export function hashCanonical(canonical: string): `0x${string}` {
   return keccak256(stringToBytes(canonical));
 }
+
+/** How a single data source was obtained, parsed from a committed `data_sources`
+ *  entry. `internal` = derived from peer agents (no external data). `unknown` =
+ *  a legacy/bare entry with no liveness tag — liveness cannot be confirmed. */
+export type ProvenanceMode = "live" | "mock" | "unavailable" | "internal" | "unknown";
+
+export interface Provenance {
+  source: string;
+  mode: ProvenanceMode;
+  ref?: string;
+}
+
+const KNOWN_MODES: ProvenanceMode[] = ["live", "mock", "unavailable", "internal"];
+
+/** Parse each committed `data_sources` entry (`"<source>:<mode>[@<ref>]"`) into its
+ *  parts. Tolerant by design: a bare entry with no `:mode` (e.g. a legacy `"nansen"`)
+ *  parses as mode `unknown`, so verifying an old receipt never throws. Order-independent —
+ *  it reads the published bytes, so per-receipt verification holds regardless of order. */
+export function parseProvenance(chain: ReasoningChain): Provenance[] {
+  return chain.data_sources.map((entry) => {
+    const at = entry.indexOf("@");
+    const ref = at === -1 ? undefined : entry.slice(at + 1);
+    const head = at === -1 ? entry : entry.slice(0, at);
+    const colon = head.indexOf(":");
+    if (colon === -1) return { source: head, mode: "unknown" as ProvenanceMode, ...(ref ? { ref } : {}) };
+    const rawMode = head.slice(colon + 1).trim().toLowerCase();
+    const mode = (KNOWN_MODES as string[]).includes(rawMode)
+      ? (rawMode as ProvenanceMode)
+      : ("unknown" as ProvenanceMode);
+    return { source: head.slice(0, colon), mode, ...(ref ? { ref } : {}) };
+  });
+}
+
+/** True iff every data source is confirmably real (`live`) or peer-internal — i.e. no
+ *  source was `mock`, `unavailable`, or of `unknown` liveness. A receipt that can't prove
+ *  it ran on real data returns false. Requires at least one declared source. */
+export function isFullyLive(chain: ReasoningChain): boolean {
+  const sources = parseProvenance(chain);
+  if (sources.length === 0) return false;
+  return sources.every((s) => s.mode === "live" || s.mode === "internal");
+}

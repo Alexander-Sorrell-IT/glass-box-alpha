@@ -29,4 +29,6 @@ class DevilsAdvocate(GlassBoxAgent):
             "web_reasoning": self.peer_outputs.get("web", {}),
             "mood_reasoning": self.peer_outputs.get("mood", {}),
             "note": "Inject null into each agent's stated assumptions. Find what they did NOT consider.",
+            # DA reasons over peer outputs, not external data — declared honestly, not as live.
+            "_provenance": ["peers:internal"],
         }

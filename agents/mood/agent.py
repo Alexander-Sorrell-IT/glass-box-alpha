@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..shared.base import GlassBoxAgent
-from ..shared.tools import elfa_sentiment
+from ..shared.tools import collect_provenance, elfa_sentiment
 
 
 class Mood(GlassBoxAgent):
@@ -25,4 +25,5 @@ class Mood(GlassBoxAgent):
                 "Compute sentiment magnitude × (1 - correlation_with_price). "
                 "High orthogonal value = decoupled from price = leading indicator."
             ),
+            "_provenance": collect_provenance(sentiment_24h, sentiment_7d),
         }
