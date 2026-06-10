@@ -1,6 +1,6 @@
 # Mantle DevRel Outreach
 
-**Send: Day 2 (2026-05-27) once Agent Identity NFTs are minted on mainnet so the pitch references real on-chain artifacts.**
+**Send-ready now — the pitch references LIVE on-chain artifacts: the `ReasoningHashAnchor` + in-browser tamper test on Mantle Sepolia (chain 5003). DO NOT reference mainnet mints, agent-identity NFTs, or live PnL→reputation settlement — none of those exist yet (see docs/claims-ledger.md).**
 
 **Channels (in order):**
 1. Mantle Discord — #builders channel (public-facing version)
@@ -13,7 +13,7 @@
 
 > Hey Mantle builders 👋
 >
-> Shipping Glass-Box Alpha for the Turing Test Hackathon — 4 AI trading agents, each running a different reasoning frame. Real Mantle DeFi calls, full chain-of-thought visible (deepseek-v4-pro streams thinking natively), reasoning chains hashed on Mantle via ERC-8004 reputation graded by actual PnL.
+> Shipping Glass-Box Alpha for the Turing Test Hackathon — 4 AI trading agents, each running a different reasoning frame, with full chain-of-thought visible (DeepSeek's reasoner streams its thinking natively). The hook: each agent commits the keccak256 of its reasoning to Mantle **before** the outcome — recompute it in the browser, tamper one byte, watch it turn red. Live on Mantle Sepolia today. (ERC-8004 reputation graded by realized PnL is the design; settlement lands post-hackathon.)
 >
 > Agent frames:
 > - Chronos → timeline / historical analog mining (possibility trees through time)
@@ -24,11 +24,11 @@
 >
 > Hot take: the AI Awakening livestream on July 2-3 deserves an open scoreboard that any competing agent can plug into. So I'm building one. OBS-streaming-ready, 16:9 layout, plug-and-play schema. If anyone wants to integrate their agent into the leaderboard, the spec drops in 48hrs.
 >
-> Agent Identity NFTs just minted on Mantle mainnet:
-> - Chronos: [tx]
-> - Devil's Advocate: [tx]
-> - Web: [tx]
-> - Mood: [tx]
+> What's live on Mantle Sepolia (chain 5003) right now:
+> - On-chain reasoning commit + in-browser tamper test — recompute the hash yourself
+> - TS = Python = Solidity hash parity, proven on-chain
+> - New: the receipt commits each input's *provenance* (live vs mock) — it can't claim mock data was real
+> - Open SDK (glassbox-agent-kit): a foreign agent built on only the kit produces a receipt anyone can recompute **and** beat under the same on-chain rule
 >
 > Repo: github.com/Alexander-Sorrell-IT/glass-box-alpha
 >
@@ -38,7 +38,7 @@
 
 ## DM to Mantle DevRel (Day 2 — personalized)
 
-> Hey [name], building Glass-Box Alpha for the Turing Test hackathon — 4 AI agents trading real Mantle DeFi with visible chain-of-thought (via deepseek-v4-pro's native thinking stream). Each agent runs a different reasoning frame; ensemble decision via the Fold (confidence-weighted consensus across the 4 frames). ERC-8004 reputation graded by realized on-chain PnL.
+> Hey [name], building Glass-Box Alpha for the Turing Test hackathon — 4 AI agents, each a different reasoning frame, with visible chain-of-thought (DeepSeek's reasoner streams its thinking natively). The hook: each agent commits the keccak256 of its reasoning to Mantle **before** the outcome, so anyone recomputes it in the browser and a single tampered byte turns it red — live on Mantle Sepolia today. Ensemble decision via the Fold (confidence-weighted consensus). ERC-8004 reputation graded by realized PnL is designed; settlement lands post-hackathon.
 >
 > Concrete ask: I'm scoping a broadcast view explicitly designed for the July 2-3 AI Awakening livestream — OBS-streaming layout, plug-and-play integration schema any hackathon team's agent can implement to appear on the leaderboard alongside ours.
 >
@@ -52,7 +52,7 @@
 >
 > Background: AI Systems Engineer, NVIDIA HGX A100/H100 hardware background, built a 20-class multi-agent orchestration framework managing 6,400+ concurrent program states, 451-test AI governance methodology across Claude/Copilot/Gemini, identified vulnerabilities in Forta Network.
 >
-> Repo opening Day 3 once contracts are deployed. Happy to share the spec draft now if useful.
+> Repo is live (github.com/Alexander-Sorrell-IT/glass-box-alpha); all 5 contracts deployed on Mantle Sepolia. Happy to share the integration spec now if useful.
 
 ---
 

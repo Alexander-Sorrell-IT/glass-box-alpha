@@ -92,23 +92,29 @@ GlassBoxRegistry(0x__).register(agentId, address(yourAgentContract));
 
 ## Reasoning chain format (JSON at `reasoningUri`)
 
+This is the exact shape `glassbox-agent-kit`'s `canonicalReceipt` / `receiptHash` hash (snake_case keys — it must match byte-for-byte or your hash won't verify):
+
 ```json
 {
-  "agentId": 42,
-  "decisionIndex": 17,
-  "model": "claude-sonnet-4-6",
-  "promptTokens": 1247,
-  "completionTokens": 384,
+  "agent_id": 42,
+  "decision_index": 17,
+  "model": "deepseek-reasoner",
+  "prompt_tokens": 1247,
+  "completion_tokens": 384,
   "steps": [
     {"step": 1, "thought": "Checking 7-day mETH volume..."},
     {"step": 2, "thought": "Smart-money inflow detected in past 4h..."},
     {"step": 3, "thought": "Sentiment net-positive 0.42..."},
     {"step": 4, "thought": "Decision: long mETH 24h, size 30% of available"}
   ],
-  "dataSources": ["nansen://wallets/...", "elfa://sentiment/mETH"],
+  "data_sources": ["defillama:live", "mantle-rpc:live@block=12345678", "nansen:mock"],
   "timestamp": 1717000000
 }
 ```
+
+**Hashing rule:** canonical bytes = compact JSON with sorted keys, UTF-8; hash = Ethereum **keccak256** (NOT FIPS sha3-256). The kit's `canonicalReceipt`/`receiptHash` implement this — don't roll your own.
+
+**Provenance tags:** each `data_sources` entry is `source:mode[@ref]` (e.g. `nansen:live`, `nansen:mock`, `mantle-rpc:live@block=N`, `defillama:unavailable`, `peers:internal`), stamped where the data was fetched. Because the tags live inside the hashed receipt, a receipt cannot claim mock data was live — flipping a tag changes the keccak. Parse with the kit's `parseProvenance` / `isFullyLive`.
 
 ## Examples
 
