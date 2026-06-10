@@ -18,6 +18,10 @@ from loguru import logger
 _NANSEN_BASE = "https://api.nansen.ai"
 _ELFA_BASE = "https://api.elfa.ai"
 
+# Round-burst cache for the Nansen netflow response (all assets + all windows in
+# one payload; ~5 credits per call on the free tier). 60s covers one round's lookups.
+_NETFLOW_CACHE: dict[str, Any] = {"rows": None, "at": 0.0}
+
 # UniswapV2-style Swap(address,uint,uint,uint,uint,address) — the topic the engine
 # reads first-party off Mantle. Used here only to prove a chain-read happened.
 _V2_SWAP_TOPIC = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"
@@ -83,6 +87,16 @@ async def nansen_smart_money_flows(asset: str, lookback_hours: int = 24) -> dict
     if not api_key:
         return _mock_nansen_flows(asset, lookback_hours)
 
+    # One netflow response carries ALL assets and ALL time windows for the chain,
+    # and every call costs ~5 Nansen credits — so a short TTL cache lets the six
+    # per-round lookups (Chronos x3 windows + Web x3 assets) share ONE live fetch.
+    # Within the TTL it is the same live response, so the tag stays nansen:live.
+    import time as _time
+    if _NETFLOW_CACHE["rows"] is not None and _time.monotonic() - _NETFLOW_CACHE["at"] < 60:
+        data = _parse_netflow(_NETFLOW_CACHE["rows"], asset, lookback_hours)
+        data["_provenance"] = _prov("nansen", "live")
+        return data
+
     url = f"{_NANSEN_BASE}/api/v1/smart-money/netflow"
     body = {"chains": ["mantle"], "pagination": {"page": 1, "per_page": 25}}
     headers = {"apikey": api_key}
@@ -91,7 +105,9 @@ async def nansen_smart_money_flows(asset: str, lookback_hours: int = 24) -> dict
         try:
             r = await client.post(url, json=body, headers=headers)
             r.raise_for_status()
-            data = _parse_netflow(r.json().get("data") or [], asset, lookback_hours)
+            rows = r.json().get("data") or []
+            _NETFLOW_CACHE.update(rows=rows, at=_time.monotonic())
+            data = _parse_netflow(rows, asset, lookback_hours)
             data["_provenance"] = _prov("nansen", "live")
             return data
         except httpx.HTTPError as e:
