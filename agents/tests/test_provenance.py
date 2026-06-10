@@ -139,3 +139,30 @@ def test_each_agent_declares_provenance_in_mock_mode(monkeypatch):
 
     da = _data_sources_from(asyncio.run(DevilsAdvocate(client, 2).gather_context("mETH/USDC")))
     assert da == ["peers:internal"]
+
+
+# ---- live Nansen netflow parse (pure — no HTTP mocking, per house style) ----
+
+def test_netflow_parse_picks_asset_row_and_window():
+    """The real /smart-money/netflow endpoint returns per-token rows for the chain;
+    the parser must pick the asset's row and the flow window nearest the lookback."""
+    rows = [
+        {"token_symbol": "PUFF", "net_flow_24h_usd": -100.0, "net_flow_7d_usd": -700.0,
+         "net_flow_30d_usd": -40233.78, "trader_count": 1},
+        {"token_symbol": "mETH", "net_flow_24h_usd": 5000.0, "net_flow_7d_usd": 9000.0,
+         "net_flow_30d_usd": 12000.0, "trader_count": 4},
+    ]
+    out = tools._parse_netflow(rows, "meth", lookback_hours=24 * 7)  # case-insensitive
+    assert out["net_flow_usd"] == 9000.0
+    assert out["wallet_count"] == 4
+    assert out["asset_tracked_by_smart_money"] is True
+
+
+def test_netflow_parse_no_row_is_honest_zero_not_failure():
+    """A token with no smart-money netflow row is a REAL live reading (zero flow),
+    not an error — the tag stays nansen:live, never silently mock."""
+    rows = [{"token_symbol": "PUFF", "net_flow_24h_usd": 0.0, "trader_count": 1}]
+    out = tools._parse_netflow(rows, "mETH", lookback_hours=24)
+    assert out["net_flow_usd"] == 0.0
+    assert out["wallet_count"] == 0
+    assert out["asset_tracked_by_smart_money"] is False

@@ -43,24 +43,55 @@ def collect_provenance(*payloads: Any) -> list[str]:
             if isinstance(p, dict) and isinstance(p.get("_provenance"), str)]
 
 
-async def nansen_smart_money_flows(asset: str, lookback_hours: int = 24) -> dict[str, Any]:
-    """Pull smart-money wallet flow data for an asset on Mantle.
+def _parse_netflow(rows: list[dict[str, Any]], asset: str, lookback_hours: int) -> dict[str, Any]:
+    """Pure parse of Nansen /smart-money/netflow rows into the tool's return shape.
 
-    Returns: {"net_flow_usd": float, "wallet_count": int, "top_wallets": [...]}
+    The endpoint returns per-TOKEN smart-money netflow for the whole chain; we pick
+    the row matching ``asset`` (case-insensitive symbol) and the flow window nearest
+    ``lookback_hours``. No matching row is an honest live reading — zero smart-money
+    netflow for that token, NOT a failure. Pure so it's testable offline (house
+    style: no HTTP mocking).
+    """
+    flow_key = ("net_flow_24h_usd" if lookback_hours <= 24
+                else "net_flow_7d_usd" if lookback_hours <= 24 * 7
+                else "net_flow_30d_usd")
+    match = next((r for r in rows
+                  if str(r.get("token_symbol", "")).lower() == asset.lower()), None)
+    return {
+        "asset": asset,
+        "chain": "mantle",
+        "lookback_hours": lookback_hours,
+        "net_flow_usd": float(match.get(flow_key) or 0.0) if match else 0.0,
+        "wallet_count": int(match.get("trader_count") or 0) if match else 0,
+        "asset_tracked_by_smart_money": match is not None,
+        "chain_tokens_with_flow": [
+            {"symbol": r.get("token_symbol"), flow_key: r.get(flow_key),
+             "trader_count": r.get("trader_count")}
+            for r in rows[:5]
+        ],
+    }
+
+
+async def nansen_smart_money_flows(asset: str, lookback_hours: int = 24) -> dict[str, Any]:
+    """Pull smart-money netflow for an asset on Mantle via the real Nansen API
+    (POST /api/v1/smart-money/netflow, lowercase ``apikey`` header — verified live
+    2026-06-10 against chain "mantle").
+
+    Returns: {"net_flow_usd": float, "wallet_count": int, ...}
     """
     api_key = os.environ.get("NANSEN_API_KEY")
     if not api_key:
         return _mock_nansen_flows(asset, lookback_hours)
 
-    url = f"{_NANSEN_BASE}/v1/smart-money/flows"
-    params = {"asset": asset, "chain": "mantle", "hours": lookback_hours}
-    headers = {"Authorization": f"Bearer {api_key}"}
+    url = f"{_NANSEN_BASE}/api/v1/smart-money/netflow"
+    body = {"chains": ["mantle"], "pagination": {"page": 1, "per_page": 25}}
+    headers = {"apikey": api_key}
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         try:
-            r = await client.get(url, params=params, headers=headers)
+            r = await client.post(url, json=body, headers=headers)
             r.raise_for_status()
-            data = r.json()
+            data = _parse_netflow(r.json().get("data") or [], asset, lookback_hours)
             data["_provenance"] = _prov("nansen", "live")
             return data
         except httpx.HTTPError as e:
