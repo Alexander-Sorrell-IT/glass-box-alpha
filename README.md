@@ -16,7 +16,15 @@ Four agents each run a distinct reasoning frame (Chronos / Devil's Advocate / We
 | **On-chain attestation** | Reasoning-chain hash committed to Mantle (verifiable receipts) | `ReasoningHashAnchor` contract |
 
 ## Status
-🟢 **Live on Mantle Sepolia** (chain 5003) — all 5 Glass-Box contracts deployed and wired into the frontend (addresses in `frontend/lib/contracts.ts`). The keynote tamper-test reads the real on-chain reasoning commit. Mainnet settlement deploy is post-hackathon. Data layer is real-API-ready (DeepSeek is the intended LLM backend, key-gated; Nansen/Elfa wired with deterministic mock fallback when a key/endpoint is unavailable) — and every receipt commits each input's **liveness provenance** (`nansen:live` / `nansen:mock` / `mantle-rpc:live@block=N` / `defillama:unavailable`) inside the hashed `data_sources`, so a receipt can't claim mock data was live.
+🟢 **Live on Mantle Sepolia** (chain 5003) — all 5 Glass-Box contracts deployed, **source-verified on Mantle Explorer (Exact Match)**, and wired into the frontend. The keynote tamper-test reads the real on-chain reasoning commit. Mainnet settlement deploy is post-hackathon.
+
+| Contract | Address (Mantle Sepolia) | Source |
+|---|---|---|
+| ReasoningHashAnchor | [`0xB0319b2e88d95B2d7Ce706feC7E2799d9b93353d`](https://sepolia.mantlescan.xyz/address/0xB0319b2e88d95B2d7Ce706feC7E2799d9b93353d) | ✅ verified |
+| GlassBoxRegistry | [`0x52237944151D385222316f446b7a08Cde44b6797`](https://sepolia.mantlescan.xyz/address/0x52237944151D385222316f446b7a08Cde44b6797) | ✅ verified |
+| RoundState | [`0xe016C12d1D42cc2E4ECaaCE2B0fd5058cC984Ea5`](https://sepolia.mantlescan.xyz/address/0xe016C12d1D42cc2E4ECaaCE2B0fd5058cC984Ea5) | ✅ verified |
+| ReasoningRepToken (GBRR) | [`0x72eA3147F126c9F1C797D1E56D8cF65cFA3d69F9`](https://sepolia.mantlescan.xyz/address/0x72eA3147F126c9F1C797D1E56D8cF65cFA3d69F9) | ✅ verified |
+| HumanArena | [`0x51eaD31AdA817281bD853a8ab9a011b1BFcAdf99`](https://sepolia.mantlescan.xyz/address/0x51eaD31AdA817281bD853a8ab9a011b1BFcAdf99) | ✅ verified | Data layer is real-API-ready (DeepSeek is the intended LLM backend, key-gated; Nansen/Elfa wired with deterministic mock fallback when a key/endpoint is unavailable) — and every receipt commits each input's **liveness provenance** (`nansen:live` / `nansen:mock` / `mantle-rpc:live@block=N` / `defillama:unavailable`) inside the hashed `data_sources`, so a receipt can't claim mock data was live.
 
 ## What's in the box
 - `contracts/` — Foundry workspace. `IGlassBoxAgent`, `ReasoningHashAnchor`, `GlassBoxRegistry`, `RoundState`, `AgentExecutor`, `MerchantMoeAdapter`, `ReasoningRepToken`, `HumanArena` (the AI-vs-human play layer). 59/59 Solidity tests passing (`forge test`).
