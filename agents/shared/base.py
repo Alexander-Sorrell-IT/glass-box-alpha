@@ -31,11 +31,16 @@ class GlassBoxAgent(ABC):
     agent_id: int  # ERC-8004 token ID — set after Day 4 mint
     model: str
 
-    def __init__(self, client: AsyncOpenAI, agent_id: int, model: str | None = None) -> None:
+    def __init__(self, client: AsyncOpenAI, agent_id: int, model: str | None = None,
+                 decision_index: int = 0) -> None:
         self.client = client
         self.agent_id = agent_id
         self.model = model or os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro")
-        self._decision_index = 0
+        # The anchor reverts AlreadyCommitted() on a reused (agent_id, decision_index),
+        # and this counter dies with the process — a live runner must seed it from the
+        # chain (see agents/settler/live.py next_decision_index). 0 stays the default
+        # for dry-run/tests.
+        self._decision_index = decision_index
 
     def system_prompt(self) -> str:
         """Agent's reasoning-frame system prompt. Override for custom behavior."""

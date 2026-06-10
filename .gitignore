@@ -19,6 +19,7 @@ contracts/broadcast/*/run-*/
 
 # Runs
 runs/
+receipts/
 *.log
 
 # Internal strategy — NEVER commit to the public repo (competitors/judges read it)

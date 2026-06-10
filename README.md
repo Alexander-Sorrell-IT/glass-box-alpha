@@ -20,7 +20,7 @@ Four agents each run a distinct reasoning frame (Chronos / Devil's Advocate / We
 
 ## What's in the box
 - `contracts/` — Foundry workspace. `IGlassBoxAgent`, `ReasoningHashAnchor`, `GlassBoxRegistry`, `RoundState`, `AgentExecutor`, `MerchantMoeAdapter`, `ReasoningRepToken`, `HumanArena` (the AI-vs-human play layer). 59/59 Solidity tests passing (`forge test`).
-- `agents/` — Python multi-agent backend. 4 specialists + Fold ensemble (confidence-weighted consensus) + orchestrator + backtest harness. DeepSeek reasoner backend with native chain-of-thought streaming (key-gated). 57/57 Python tests passing (`pytest` from repo root).
+- `agents/` — Python multi-agent backend. 4 specialists + Fold ensemble (confidence-weighted consensus) + orchestrator + backtest harness. DeepSeek reasoner backend with native chain-of-thought streaming (key-gated). Live-runner composition root (`python -m agents.settler.live`) wires the round flow to a real chain behind a single `--live` flag — see `docs/mainnet-runbook.md` (full mainnet deploy ≈ $0.07 gas, estimated from Sepolia receipts + live mainnet reads). 74/74 Python tests passing (`PYTHONPATH=. pytest agents` from repo root; build contracts first — the ABI test reads `contracts/out/`).
 - `frontend/` — Next.js 14 + RainbowKit + Tailwind. Live reasoning-chain stream, leaderboard, PnL chart, wallet connect.
 - `broadcast/` — OBS-streaming-ready scene layouts for the July 2-3 AI Awakening livestream.
 - `kit/` — `glassbox-agent-kit` — reusable TypeScript SDK (2nd BUIDL): the reasoning-receipt primitive, a transparent `GlassBoxAgent` base + Fold, on-chain commit/verify helpers, and ERC-8004 shapes. Byte-parity with the Python agent / Solidity contract / browser is pinned by a golden-vector test (`cd kit && npm test`).

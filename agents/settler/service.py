@@ -192,7 +192,9 @@ class SettlerService:
             return int.from_bytes(os.urandom(4), "big") % 10_000  # pseudo round_id for dry-run
         market_hash = self._market_hash(market_id)
         tx = self.round_state.functions.openRound(market_hash).transact()
-        receipt = self.round_state.web3.eth.wait_for_transaction_receipt(tx)
+        # web3 v7 renamed Contract.web3 -> Contract.w3. One in-flight tx at a time
+        # (wait per shim) keeps local-signing nonces deterministic.
+        receipt = self.round_state.w3.eth.wait_for_transaction_receipt(tx)
         # parse RoundOpened event for round_id
         event = self.round_state.events.RoundOpened().process_receipt(receipt)[0]
         return event["args"]["roundId"]
@@ -201,27 +203,30 @@ class SettlerService:
         if self.dry_run or self.reasoning_anchor is None:
             logger.debug(f"[dry-run] commit agentId={agent_id} idx={decision_idx} hash={reasoning_hash_hex[:16]}…")
             return
-        rh_bytes = bytes.fromhex(reasoning_hash_hex)
-        self.reasoning_anchor.functions.commit(agent_id, decision_idx, rh_bytes).transact()
+        rh_bytes = bytes.fromhex(reasoning_hash_hex.removeprefix("0x"))
+        tx = self.reasoning_anchor.functions.commit(agent_id, decision_idx, rh_bytes).transact()
+        self.reasoning_anchor.w3.eth.wait_for_transaction_receipt(tx)
 
     def _record_submission(self, round_id: int, agent_id: int, decision: dict, reasoning_hash_hex: str) -> None:
         if self.dry_run or self.round_state is None:
             logger.debug(f"[dry-run] recordSubmission round={round_id} agent={agent_id} signal={decision['directional_signal']:+.2f}")
             return
-        self.round_state.functions.recordSubmission(
+        tx = self.round_state.functions.recordSubmission(
             round_id,
             agent_id,
             decision["kind"],
             int(decision["directional_signal"] * 1e18),
             decision["size_bps"],
-            bytes.fromhex(reasoning_hash_hex),
+            bytes.fromhex(reasoning_hash_hex.removeprefix("0x")),
         ).transact()
+        self.round_state.w3.eth.wait_for_transaction_receipt(tx)
 
     def _set_ensemble(self, round_id: int, ensemble_signal: float) -> None:
         if self.dry_run or self.round_state is None:
             logger.debug(f"[dry-run] setEnsemble round={round_id} signal={ensemble_signal:+.3f}")
             return
-        self.round_state.functions.setEnsemble(round_id, int(ensemble_signal * 1e18)).transact()
+        tx = self.round_state.functions.setEnsemble(round_id, int(ensemble_signal * 1e18)).transact()
+        self.round_state.w3.eth.wait_for_transaction_receipt(tx)
 
     def _execute_trade(self, round_id: int, ensemble_signal: float, ensemble_conf: float,
                        size_bps: int, token_in: str, token_out: str) -> bool:
@@ -229,7 +234,7 @@ class SettlerService:
             logger.debug(f"[dry-run] executeTrade round={round_id} {token_in}->{token_out} size_bps={size_bps}")
             return True
         try:
-            self.executor.functions.executeTrade(
+            tx = self.executor.functions.executeTrade(
                 round_id,
                 int(ensemble_signal * 1e4),
                 int(ensemble_conf * 1e4),
@@ -239,6 +244,7 @@ class SettlerService:
                 size_bps,
                 0,                           # minAmountOut — slippage handled in router adapter
             ).transact()
+            self.executor.w3.eth.wait_for_transaction_receipt(tx)
             return True
         except Exception as exc:
             logger.warning(f"[settler] trade execution failed: {exc}")

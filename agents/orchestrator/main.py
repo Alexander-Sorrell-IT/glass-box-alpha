@@ -30,12 +30,16 @@ from ..web.agent import Web
 load_dotenv()
 
 
-async def run_round(market_id: str, agent_ids: dict[str, int]) -> dict[str, Any]:
+async def run_round(market_id: str, agent_ids: dict[str, int],
+                    decision_indices: dict[str, int] | None = None) -> dict[str, Any]:
     """One full decision round on a market.
 
     Args:
         market_id: e.g. "mETH/USDC"
         agent_ids: mapping of agent name -> ERC-8004 agent_id (from Day 2 mints)
+        decision_indices: optional per-agent starting decision_index, seeded from the
+            anchor by the live runner so a process restart can't recommit an index the
+            chain already holds (AlreadyCommitted revert). Defaults to 0 for dry-run.
 
     Returns:
         payload with per-agent decisions, reasoning hashes, fold ensemble result.
@@ -51,10 +55,13 @@ async def run_round(market_id: str, agent_ids: dict[str, int]) -> dict[str, Any]
         base_url=os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
     )
 
-    chronos = Chronos(client, agent_id=agent_ids["chronos"])
-    web = Web(client, agent_id=agent_ids["web"])
-    mood = Mood(client, agent_id=agent_ids["mood"])
-    devils_advocate = DevilsAdvocate(client, agent_id=agent_ids["devils_advocate"])
+    idx = decision_indices or {}
+    chronos = Chronos(client, agent_id=agent_ids["chronos"],
+                      decision_index=idx.get("chronos", 0))
+    web = Web(client, agent_id=agent_ids["web"], decision_index=idx.get("web", 0))
+    mood = Mood(client, agent_id=agent_ids["mood"], decision_index=idx.get("mood", 0))
+    devils_advocate = DevilsAdvocate(client, agent_id=agent_ids["devils_advocate"],
+                                     decision_index=idx.get("devils_advocate", 0))
 
     # 1. Run Chronos / Web / Mood in parallel
     logger.info(f"[round] market={market_id} — launching Chronos/Web/Mood in parallel")

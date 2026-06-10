@@ -142,6 +142,80 @@ async def mantle_dex_price(asset_pair: str) -> dict[str, Any]:
                     "_provenance": _prov("defillama", "unavailable")}
 
 
+# ---------- Settlement-grade price read (never silently mock) ----------
+
+_LLAMA_COINS_URL = "https://coins.llama.fi/prices/current/"
+# Mantle-mainnet token addresses — mirror of the settler's _resolve_tokens map.
+_PRICE_TOKEN_ADDRS = {
+    "USDC": "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9",
+    "mETH": "0xcDA86A272531e8640cD7F1a92c01839911B90bb0",
+    "MNT": "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8",  # WMNT
+    "USDY": "0x5bE26527e817998A7206475496fDE1E68957c5A6",
+    "fBTC": "0xC96dE26018A54D51c097160568752c4E3BD6C364",
+}
+_PRICE_MIN_CONFIDENCE = 0.9  # DeFiLlama's own guidance: confidence < 0.9 is unreliable
+
+
+def _parse_llama_pair(coins: dict[str, Any], market_id: str) -> dict[str, Any] | None:
+    """Pure parse of a DeFiLlama /prices/current ``coins`` payload into a pair price.
+
+    Returns ``{"base_usd", "quote_usd", "price", "timestamp"}`` or None if either leg
+    is missing or below the confidence floor. Pure so the parse/pair math is testable
+    offline — the house style has no HTTP mocking. Response keys echo the request's
+    address casing, so lookups use the exact `_PRICE_TOKEN_ADDRS` strings.
+    """
+    base_sym, quote_sym = market_id.split("/")
+    legs: dict[str, float] = {}
+    stamps: list[int] = []
+    for leg, sym in (("base_usd", base_sym), ("quote_usd", quote_sym)):
+        entry = coins.get(f"mantle:{_PRICE_TOKEN_ADDRS[sym]}")
+        if not entry or entry.get("confidence", 0) < _PRICE_MIN_CONFIDENCE:
+            return None
+        legs[leg] = float(entry["price"])
+        stamps.append(int(entry["timestamp"]))
+    return {
+        **legs,
+        "price": legs["base_usd"] / legs["quote_usd"],
+        # The OLDER of the two observations — the honest bound on staleness.
+        "timestamp": min(stamps),
+    }
+
+
+async def mantle_spot_price(market_id: str) -> dict[str, Any]:
+    """Settlement-grade pair spot price (base/quote in quote units) from the keyless
+    DeFiLlama coins API.
+
+    This is the read ``settle_round`` grades against, so the mantle-rpc rule applies
+    even harder: NO mock fallback, ever — a grade computed on invented prices would be
+    a fabricated outcome wearing a real signature. Unknown pair, HTTP failure, missing
+    token, or DeFiLlama confidence < 0.9 all declare ``defillama-price:unavailable``
+    honestly and let the caller decide to retry. A live read is anchored to the API's
+    own observation time: ``defillama-price:live@ts=N``. ``LLAMA_PRICE_URL`` is read at
+    CALL time (tests point it at a dead port to exercise the unavailable path offline).
+    """
+    base_url = os.environ.get("LLAMA_PRICE_URL", _LLAMA_COINS_URL)
+    try:
+        base_sym, quote_sym = market_id.split("/")
+        keys = f"mantle:{_PRICE_TOKEN_ADDRS[base_sym]},mantle:{_PRICE_TOKEN_ADDRS[quote_sym]}"
+    except (ValueError, KeyError):
+        return {"market_id": market_id, "available": False,
+                "_provenance": _prov("defillama-price", "unavailable")}
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.get(base_url + keys)
+            r.raise_for_status()
+            parsed = _parse_llama_pair(r.json().get("coins", {}), market_id)
+    except Exception as e:  # settlement must never grade on faked prices — declare, don't invent
+        logger.warning(f"DeFiLlama price unavailable, declaring it (not faking live): {e}")
+        return {"market_id": market_id, "available": False,
+                "_provenance": _prov("defillama-price", "unavailable")}
+    if parsed is None:
+        return {"market_id": market_id, "available": False,
+                "_provenance": _prov("defillama-price", "unavailable")}
+    return {"market_id": market_id, "available": True, **parsed,
+            "_provenance": _prov("defillama-price", "live", f"ts={parsed['timestamp']}")}
+
+
 # ---------- Mock data (used until API keys set) ----------
 
 def _mock_nansen_flows(asset: str, lookback_hours: int) -> dict[str, Any]:
