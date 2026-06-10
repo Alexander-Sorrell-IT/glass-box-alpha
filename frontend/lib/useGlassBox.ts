@@ -94,6 +94,43 @@ export function useCommitsCount() {
   return { commitsCount: data ? Number(data) : undefined, isLoading };
 }
 
+export interface OnChainCommit {
+  agentId: number;
+  decisionIndex: number;
+  reasoningHash: `0x${string}`;
+  timestamp: number;
+}
+
+/** Latest on-chain reasoning commits, newest first — a REAL live feed for the
+ * Reasoning Stream. Commits from future live rounds appear here automatically. */
+export function useOnChainCommits(max = 12) {
+  const { commitsCount } = useCommitsCount();
+  const total = commitsCount ?? 0;
+  const ids = Array.from({ length: Math.min(max, total) }, (_, i) => total - 1 - i).filter((i) => i >= 0);
+
+  const { data, isLoading } = useReadContracts({
+    contracts: ids.map((i) => ({
+      address: isDeployed(REASONING_HASH_ANCHOR_MAINNET) ? REASONING_HASH_ANCHOR_MAINNET : undefined,
+      abi: reasoningAnchorAbi,
+      functionName: "commits" as const,
+      args: [BigInt(i)],
+    })),
+    query: { enabled: isDeployed(REASONING_HASH_ANCHOR_MAINNET) && ids.length > 0, refetchInterval: 15_000 },
+  });
+
+  type CommitTuple = readonly [bigint, bigint, `0x${string}`, bigint, `0x${string}`];
+  const commits: OnChainCommit[] = (data ?? [])
+    .map((r) => r.result as CommitTuple | undefined)
+    .filter((x): x is CommitTuple => !!x)
+    .map(([agentId, decisionIndex, reasoningHash, timestamp]) => ({
+      agentId: Number(agentId),
+      decisionIndex: Number(decisionIndex),
+      reasoningHash,
+      timestamp: Number(timestamp),
+    }));
+  return { commits, isLoading };
+}
+
 /** Batch-read the latest N rounds for the leaderboard / activity feed. */
 export function useRecentRounds(count: number) {
   const { roundsCount } = useRoundsCount();

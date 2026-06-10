@@ -131,6 +131,20 @@ export const reasoningAnchorAbi = [
     outputs: [{ type: "uint256" }],
   },
   {
+    // auto-getter for `Commit[] public commits` — returns the struct members flat
+    type: "function",
+    name: "commits",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "decisionIndex", type: "uint256" },
+      { name: "reasoningHash", type: "bytes32" },
+      { name: "timestamp", type: "uint256" },
+      { name: "committer", type: "address" },
+    ],
+  },
+  {
     type: "function",
     name: "getCommit",
     stateMutability: "view",

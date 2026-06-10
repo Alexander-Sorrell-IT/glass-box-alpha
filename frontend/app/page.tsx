@@ -9,9 +9,17 @@ import { Leaderboard } from "@/components/Leaderboard";
 import { LiveStatus } from "@/components/LiveStatus";
 import { HumanCall } from "@/components/HumanCall";
 import { VerifyPanel } from "@/components/VerifyPanel";
-import { useIsLive } from "@/lib/useGlassBox";
-import { ROUND_STATE_MAINNET } from "@/lib/contracts";
+import { useIsLive, useOnChainCommits } from "@/lib/useGlassBox";
+import { ROUND_STATE_MAINNET, type AgentKey } from "@/lib/contracts";
 import { HERO_AGENTS, type HeroAgentKey } from "@/lib/heroRound";
+
+// agentId -> reasoning frame, mirroring the orchestrator's AGENT_IDS mapping.
+const AGENT_BY_ONCHAIN_ID: Record<number, AgentKey> = {
+  1: "chronos",
+  2: "web",
+  3: "mood",
+  4: "devils_advocate",
+};
 
 // Demo fixtures — shown ONLY before contracts deploy (clearly labelled SIMULATED).
 // Once live, every panel reads on-chain or shows an honest "awaiting" state, so the
@@ -35,9 +43,19 @@ const DEMO_LEADERBOARD = [
 
 export default function Home() {
   const { isLive } = useIsLive();
+  const { commits } = useOnChainCommits();
   const [selectedAgent, setSelectedAgent] = useState<HeroAgentKey | null>(null);
   const selected = selectedAgent ? HERO_AGENTS.find((a) => a.agentKey === selectedAgent) : undefined;
   const mantlescanLive = ROUND_STATE_MAINNET.length === 42;
+
+  // Live mode shows REAL on-chain commits (read from Mantle, refetched every 15s)
+  // instead of an empty stream — never fabricated thoughts over a LIVE badge.
+  const liveSteps: ReasoningStep[] = commits.map((c) => ({
+    agent: AGENT_BY_ONCHAIN_ID[c.agentId] ?? "chronos",
+    step: c.decisionIndex,
+    thought: `reasoning hash committed on-chain · ${c.reasoningHash.slice(0, 10)}…${c.reasoningHash.slice(-6)} · read from Mantle`,
+    ts: c.timestamp,
+  }));
 
   return (
     <main className="min-h-screen px-6 py-8 max-w-7xl mx-auto">
@@ -142,7 +160,7 @@ export default function Home() {
           <Leaderboard rows={isLive ? [] : DEMO_LEADERBOARD} />
         </div>
         <div>
-          <ReasoningStream steps={isLive ? [] : DEMO_STEPS} />
+          <ReasoningStream steps={isLive ? liveSteps : DEMO_STEPS} />
         </div>
       </section>
 

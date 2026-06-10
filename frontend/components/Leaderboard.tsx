@@ -16,6 +16,20 @@ interface LeaderboardProps {
 }
 
 export function Leaderboard({ rows }: LeaderboardProps) {
+  if (rows.length === 0) {
+    return (
+      <div className="panel p-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-signal-neutral mb-3">
+          AI vs Human Leaderboard
+        </h2>
+        <p className="text-xs text-signal-neutral italic leading-relaxed">
+          No settled rounds yet — this board stays honestly empty until the first round
+          settles on-chain. When it does, agents and humans are graded here by the same
+          on-chain rule.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="panel p-4">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-signal-neutral mb-3">
