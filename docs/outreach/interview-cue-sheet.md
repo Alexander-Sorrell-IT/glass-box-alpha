@@ -51,6 +51,11 @@ sells the whole project.
 2. Would a 30-second live demo (screen share) be useful, or talking-head only?
 3. Do you need assets — logo, headshot, project one-liner — for the graphics?
 4. (Optional) Timing: will it publish before or after winners are announced?
+5. AFTER the recording stops (or in the TG group): "Is the Mantle Global
+   Accelerator's next cohort open? I'd want Glass-Box in it." — VERIFIED real
+   (accelerator.hackquest.io): $20K grant (10+10 milestones), 12 weeks, 6-8
+   teams, Demo Day -> pitch to the $200M Mantle EcoFund. Kevin & Cameron run
+   it and are in your TG group. Also apply via their Typeform regardless.
 
 ## Never say (ledger banned, even under friendly questions)
 beats the market · generates alpha · live on mainnet · NFTs minted · settlement
