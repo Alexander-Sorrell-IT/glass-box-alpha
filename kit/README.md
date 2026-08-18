@@ -141,4 +141,5 @@ is what turns "trust my reasoning" into "check my reasoning."
 
 ## License
 
-MIT — see [../LICENSE](../LICENSE).
+[PolyForm Noncommercial 1.0.0](../LICENSE) — free for noncommercial use.
+Commercial use requires a paid license: matrixbuilderops@proton.me
